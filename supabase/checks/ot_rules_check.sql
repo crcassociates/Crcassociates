@@ -40,6 +40,10 @@ begin
       ('check-11', w1, pb, '2026-09-27', 2),
       ('check-12', w2, pa, '2026-09-21', 8);   -- Another worker, same project and day as check-01
 
+    -- Deleted in Raken: must be ignored everywhere.
+    insert into public.time_entries (raken_id, employee_id, project_id, work_date, hours, deleted_at)
+      values ('check-13', w1, pb, '2026-09-21', 5, now());
+
     -- Daily results
     for r in
       select x.label, x.exp_reg, x.exp_ot, d.regular_hours as act_reg, d.ot_hours as act_ot
@@ -75,6 +79,15 @@ begin
       'expected',   '11 rows',
       'actual',     v_count || ' rows',
       'passed',     v_count = 11);
+
+    select count(*) into v_count
+    from public.daily_project_hours
+    where employee_id = w1 and project_id = pb and work_date = '2026-09-21';
+    v_results := v_results || jsonb_build_object(
+      'check_name', 'Deleted time card is ignored',
+      'expected',   '0 rows',
+      'actual',     v_count || ' rows',
+      'passed',     v_count = 0);
 
     -- Weekly totals
     for r in

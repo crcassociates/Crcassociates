@@ -52,6 +52,23 @@ projects are never added together to decide OT.
 - `supabase/checks/ot_rules_check.sql` checks the calculation against the
   examples above, using sample data that it undoes afterwards.
 
+### Raken sync
+
+- Raken sign-in is OAuth with a **one-time browser approval** by a Raken user
+  (Account Administrator recommended). After that the sync renews its own
+  access. Raken rotates the renewal key, so it is stored in Supabase Vault
+  and replaced after every renewal. The approval lasts 180 days and is
+  extended by each renewal.
+- Raken's permission has no read-only option, so read-only is enforced in our
+  code: the Raken client can only send GET requests (plus the sign-in).
+- Edge Function `raken-auth` creates the approval link and receives Raken's reply.
+- Edge Function `raken-sync` copies employees (Raken "members"), projects and
+  time cards (one worker, one project, one day each) into Supabase:
+  - Normal run: time cards changed since the last run, plus deletions.
+  - Range run: re-reads all time cards dated in a range (used for the first import).
+  - Time cards deleted in Raken are marked `deleted_at` and left out of all calculations.
+  - Each run is logged in `sync_runs`.
+
 ### Output
 
 1. **Excel report**: per employee → per project → Regular / OT / Total, with a
@@ -72,5 +89,10 @@ projects are never added together to decide OT.
 - **Daily OT threshold:** 8 hours for now; configurable in `ot_rules`.
 - **Raken's own pay types:** Raken may already mark hours as ST/OT/DT. We
   recalculate Regular/OT from total hours using our rules. Confirm this is wanted.
+- **Approved time cards only?** Raken marks time cards as approved or not. For
+  now all non-deleted time cards count; `all_approved` in the daily results
+  shows whether each day is fully approved.
+- **First import start date:** how far back to copy time cards from Raken.
+- **Sync schedule:** e.g. hourly; to be set up after the first import works.
 - **Web page login:** decide who can sign in (invite-only is recommended)
   before read access is opened to signed-in users.
