@@ -34,6 +34,8 @@ projects are never added together to decide OT.
 - Raken API. Credentials are stored as **Supabase Edge Function secrets**:
   `Client_ID` and `Raken_secret` (names are case-sensitive).
   Never commit credentials to this repo.
+- **Read-only:** the system only reads data from Raken. It never creates,
+  updates or deletes anything in Raken.
 
 ### Backend
 
