@@ -41,6 +41,16 @@ projects are never added together to decide OT.
 
 - **Supabase** for all backend services: Postgres database, Auth, Edge Functions,
   scheduled jobs and Storage.
+- Database tables: `employees`, `projects`, `time_entries` (copies of Raken data)
+  and `ot_rules` (OT settings).
+- Calculation: view `daily_project_hours` (Regular/OT per employee, project and
+  day) and function `hours_summary(from, to)` (totals for a date range).
+- **OT settings are effective-dated.** The 8 h threshold and weekend days are
+  stored in `ot_rules`. A change applies from its start date, so reports for
+  earlier dates keep the rules that applied then.
+- Tables are locked to the backend (service role) until the web page login is built.
+- `supabase/checks/ot_rules_check.sql` checks the calculation against the
+  examples above, using sample data that it undoes afterwards.
 
 ### Output
 
@@ -59,4 +69,8 @@ projects are never added together to decide OT.
 - **Raken data format:** confirm the fields (employee, project, date, hours,
   cost codes?) once the API is connected.
 - **Timezone / overnight shifts:** which day an overnight shift counts toward.
-- **Daily OT threshold:** 8 hours for now; keep it configurable.
+- **Daily OT threshold:** 8 hours for now; configurable in `ot_rules`.
+- **Raken's own pay types:** Raken may already mark hours as ST/OT/DT. We
+  recalculate Regular/OT from total hours using our rules. Confirm this is wanted.
+- **Web page login:** decide who can sign in (invite-only is recommended)
+  before read access is opened to signed-in users.
