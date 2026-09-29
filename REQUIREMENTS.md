@@ -73,7 +73,8 @@ projects are never added together to decide OT.
 
 1. **Excel report**: per employee → per project → Regular / OT / Total, with a
    daily breakdown and totals for a chosen date range.
-2. **Web page**: the same data, viewable in a browser.
+2. **Web page**: the same data, viewable in a browser. Design and clickable
+   prototype (sample data): `design/README.md`, `design/ui-prototype.html`.
 
 ## Open items / future changes
 
@@ -96,3 +97,7 @@ projects are never added together to decide OT.
 - **Sync schedule:** e.g. hourly; to be set up after the first import works.
 - **Web page login:** decide who can sign in (invite-only is recommended)
   before read access is opened to signed-in users.
+- **Pay week:** which day a week starts. The web page design assumes Monday to
+  Sunday (week presets; also needed for weekly OT later).
+- **OT rule changes in the web page:** the design lets admins schedule a change
+  from a start date. Confirm, or keep rule changes database-only.

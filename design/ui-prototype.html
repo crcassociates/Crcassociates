@@ -1,0 +1,2646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>CRC Associates Hours · UI prototype</title>
+<style>
+/* ==========================================================================
+   Design tokens.
+   Chart colors come from the validated data-viz palette: Regular = blue
+   (slot 1), OT = orange (slot 2). Both pass the color-blind separation and
+   contrast checks in light and dark mode. Status colors (good / warning /
+   critical) are reserved for state and always come with an icon and a label.
+   Text never uses the chart colors; a swatch next to it carries the meaning.
+   ========================================================================== */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --raised: #ffffff;
+  --sunken: #f4f3ef;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #6b6a66;
+  --muted: #898781;
+  --line: #e1e0d9;
+  --line-strong: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --control-border: rgba(11, 11, 11, 0.18);
+  --input-border: #898781;
+  --wash: rgba(11, 11, 11, 0.035);
+  --wash-2: rgba(11, 11, 11, 0.07);
+  --reg: #2a78d6;
+  --ot: #eb6834;
+  --ot-wash: rgba(235, 104, 52, 0.10);
+  --ot-wash-2: rgba(235, 104, 52, 0.18);
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warning: #fab219;
+  --warning-wash: #fdf3dc;
+  --warning-line: rgba(250, 178, 25, 0.55);
+  --critical: #d03b3b;
+  --critical-wash: #fbeaea;
+  --critical-line: rgba(208, 59, 59, 0.35);
+  --link: #1c5cab;
+  --focus: #2a78d6;
+  --btn: #0b0b0b;
+  --btn-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 12px 32px rgba(11, 11, 11, 0.12);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --raised: #232322;
+  --sunken: #151514;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --ink-3: #9a988f;
+  --muted: #898781;
+  --line: #2c2c2a;
+  --line-strong: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --control-border: rgba(255, 255, 255, 0.18);
+  --input-border: #6a6863;
+  --wash: rgba(255, 255, 255, 0.04);
+  --wash-2: rgba(255, 255, 255, 0.08);
+  --reg: #3987e5;
+  --ot: #d95926;
+  --ot-wash: rgba(217, 89, 38, 0.16);
+  --ot-wash-2: rgba(217, 89, 38, 0.26);
+  --good: #0ca30c;
+  --good-ink: #0ca30c;
+  --warning: #fab219;
+  --warning-wash: rgba(250, 178, 25, 0.12);
+  --warning-line: rgba(250, 178, 25, 0.40);
+  --critical: #d03b3b;
+  --critical-wash: rgba(208, 59, 59, 0.16);
+  --critical-line: rgba(208, 59, 59, 0.45);
+  --link: #86b6ef;
+  --focus: #3987e5;
+  --btn: #ffffff;
+  --btn-ink: #0b0b0b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --raised: #232322;
+    --sunken: #151514;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #9a988f;
+    --muted: #898781;
+    --line: #2c2c2a;
+    --line-strong: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --control-border: rgba(255, 255, 255, 0.18);
+    --input-border: #6a6863;
+    --wash: rgba(255, 255, 255, 0.04);
+    --wash-2: rgba(255, 255, 255, 0.08);
+    --reg: #3987e5;
+    --ot: #d95926;
+    --ot-wash: rgba(217, 89, 38, 0.16);
+    --ot-wash-2: rgba(217, 89, 38, 0.26);
+    --good: #0ca30c;
+    --good-ink: #0ca30c;
+    --warning: #fab219;
+    --warning-wash: rgba(250, 178, 25, 0.12);
+    --warning-line: rgba(250, 178, 25, 0.40);
+    --critical: #d03b3b;
+    --critical-wash: rgba(208, 59, 59, 0.16);
+    --critical-line: rgba(208, 59, 59, 0.45);
+    --link: #86b6ef;
+    --focus: #3987e5;
+    --btn: #ffffff;
+    --btn-ink: #0b0b0b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page);
+  color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+h1, h2, h3 { margin: 0; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+.skip { position: absolute; left: 12px; top: -48px; z-index: 100; padding: 8px 12px; border-radius: 8px; border: 0; background: var(--btn); color: var(--btn-ink); }
+.skip:focus { top: 10px; }
+.icon {
+  width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.icon.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes slide { from { transform: translateX(24px); opacity: 0; } }
+@keyframes pop { from { transform: translateY(6px) scale(0.98); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+.status-icon { width: 16px; height: 16px; flex: none; }
+.status-icon .bg { fill: var(--muted); }
+.status-icon.good .bg { fill: var(--good); }
+.status-icon.warn .bg { fill: var(--warning); }
+.status-icon.crit .bg { fill: var(--critical); }
+.status-icon.info .bg { fill: var(--ink-2); }
+.status-icon.off .bg { fill: none; stroke: var(--muted); stroke-width: 2; }
+.status-icon .fg { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.status-icon .dot { fill: #fff; }
+.status-icon.warn .fg { stroke: #0b0b0b; }
+.status-icon.warn .dot { fill: #0b0b0b; }
+.status-icon.info .fg { stroke: var(--surface); }
+.status-icon.info .dot { fill: var(--surface); }
+
+.muted { color: var(--ink-2); }
+.small { font-size: 12.5px; }
+.strong { font-weight: 600; }
+.num { text-align: right !important; font-variant-numeric: tabular-nums; }
+.zero { color: var(--ink-3); }
+.spacer { flex: 1; }
+.mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; }
+.code { margin-left: 8px; color: var(--ink-3); font-size: 12.5px; font-weight: 400; }
+.count { color: var(--ink-2); font-size: 13px; }
+.lede { color: var(--ink-2); max-width: 760px; }
+.badge {
+  display: inline-flex; align-items: center; height: 20px; margin-left: 8px; padding: 0 7px;
+  border-radius: 999px; border: 1px solid var(--control-border); color: var(--ink-2);
+  font-size: 11.5px; font-weight: 500; vertical-align: 1px;
+}
+.badge.in-effect { border-color: transparent; background: var(--ink); color: var(--surface); }
+.badge.scheduled { border-color: var(--reg); color: var(--ink); }
+.status { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Top bar ---------- */
+.topbar { position: sticky; top: 0; z-index: 30; background: var(--surface); border-bottom: 1px solid var(--border); }
+.topbar-inner { max-width: 1280px; height: 56px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none;
+  background: var(--ink); color: var(--surface); font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+}
+.brand-name { font-weight: 650; font-size: 15px; }
+.nav { display: flex; align-self: stretch; gap: 4px; }
+.nav a {
+  display: flex; align-items: center; padding: 0 12px; color: var(--ink-2); font-weight: 500;
+  text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.nav a:hover { color: var(--ink); }
+.nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.fresh {
+  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--ink-2); font-size: 13px; text-decoration: none; white-space: nowrap;
+}
+.fresh:hover { background: var(--wash); color: var(--ink); }
+.fresh.crit { border-color: var(--critical-line); background: var(--critical-wash); color: var(--ink); }
+.avatar-btn { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); }
+.avatar-btn:hover { background: var(--wash); }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--wash-2); color: var(--ink); font-weight: 600; font-size: 12px; }
+
+/* ---------- Layout ---------- */
+.container { max-width: 1280px; margin: 0 auto; padding: 24px 24px 120px; }
+.container:focus { outline: none; }
+.page { display: flex; flex-direction: column; gap: 16px; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.page-head h1 { font-size: 24px; line-height: 1.2; font-weight: 650; letter-spacing: -0.01em; }
+.page-head .sub { margin-top: 4px; color: var(--ink-2); }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crumbs { display: flex; gap: 8px; align-items: center; color: var(--ink-3); font-size: 13px; margin-bottom: -8px; }
+.crumbs a { color: var(--ink-2); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+/* ---------- Buttons & controls ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px;
+  border-radius: 8px; border: 1px solid var(--control-border); background: var(--surface); color: var(--ink);
+  font-weight: 500; white-space: nowrap; text-decoration: none;
+}
+.btn:hover { background: var(--wash); }
+.btn.primary { background: var(--btn); border-color: var(--btn); color: var(--btn-ink); }
+.btn.primary:hover { opacity: 0.88; }
+.btn.danger { background: var(--critical); border-color: var(--critical); color: #fff; }
+.btn.danger:hover { opacity: 0.9; }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--wash); }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: 0.5; }
+.btn.proto-only { border: 1px dashed var(--muted); background: transparent; color: var(--ink-2); }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border: 0; border-radius: 8px; background: none; color: var(--ink-2);
+}
+.icon-btn:hover { background: var(--wash-2); color: var(--ink); }
+.icon-btn.sm { width: 28px; height: 28px; }
+.btn-link { padding: 0; border: 0; background: none; color: var(--link); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.seg-ctl { display: inline-flex; padding: 3px; border-radius: 9px; background: var(--wash-2); }
+.seg-ctl button { height: 28px; padding: 0 12px; border: 0; border-radius: 6px; background: none; color: var(--ink-2); font-weight: 500; }
+.seg-ctl button[aria-pressed="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px;
+  border: 1px solid var(--control-border); background: var(--surface); color: var(--ink-2); font-size: 13px;
+}
+.chip:hover { background: var(--wash); }
+.chip .chip-check { display: none; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.chip[aria-pressed="true"] .chip-check { display: inline-flex; }
+.chip .icon { width: 14px; height: 14px; stroke-width: 3; }
+.search { position: relative; display: inline-flex; }
+.search > .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search input[type="search"] { width: 240px; height: 32px; padding: 0 10px 0 32px; }
+.info-tip { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); vertical-align: -4px; }
+.info-tip:hover { color: var(--ink); background: var(--wash-2); }
+.info-tip .icon { width: 14px; height: 14px; }
+
+input[type="text"], input[type="email"], input[type="search"], input[type="date"], input[type="number"], select, textarea {
+  height: 36px; padding: 0 10px; border: 1px solid var(--input-border); border-radius: 8px;
+  background: var(--raised); color: var(--ink);
+}
+textarea { height: auto; width: 100%; padding: 8px 10px; resize: vertical; line-height: 1.4; }
+input[readonly] { background: var(--sunken); color: var(--ink-2); }
+.field { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.field label { font-weight: 550; font-size: 13px; }
+.field-hint { color: var(--ink-2); font-size: 12.5px; }
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field-row .field { flex: 1; min-width: 160px; }
+.field-error { color: var(--ink); font-weight: 500; font-size: 13px; margin-top: 10px; }
+.field-error:empty { display: none; }
+.field-error::before { content: "⚠ "; color: var(--critical); }
+
+/* ---------- Date range ---------- */
+.range { display: inline-flex; align-items: stretch; height: 36px; border: 1px solid var(--control-border); border-radius: 8px; background: var(--surface); overflow: hidden; }
+.range .icon-btn { height: 34px; width: 34px; border-radius: 0; }
+.range-btn {
+  display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 0;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line); background: none; font-weight: 550;
+}
+.range-btn:hover { background: var(--wash); }
+.range-btn .preset { color: var(--ink-2); font-weight: 400; }
+
+/* ---------- Popovers & menus ---------- */
+.popover {
+  position: absolute; z-index: 50; min-width: 240px; padding: 6px; border-radius: 12px;
+  background: var(--raised); border: 1px solid var(--border); box-shadow: var(--shadow); animation: fade 0.12s ease-out;
+}
+.menu { display: flex; flex-direction: column; }
+.menu-head { display: flex; flex-direction: column; padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.menu-head span { color: var(--ink-2); font-size: 12.5px; }
+.menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 7px;
+  background: none; color: var(--ink); text-align: left; white-space: nowrap;
+}
+.menu-item:hover { background: var(--wash); }
+.menu-item .check { display: inline-grid; width: 16px; }
+.menu-item .check .icon { stroke-width: 3; }
+.menu-item[aria-checked="true"] { font-weight: 600; }
+.menu-item .hint { margin-left: auto; padding-left: 16px; color: var(--ink-3); font-size: 12.5px; font-weight: 400; }
+.popover-foot { margin-top: 6px; padding: 10px 8px 4px; border-top: 1px solid var(--line); }
+.foot-label { font-weight: 550; font-size: 13px; margin-bottom: 8px; }
+.custom-range { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.custom-range input { height: 32px; }
+
+/* ---------- Notices ---------- */
+.notice {
+  display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px;
+  border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+}
+.notice > .status-icon { margin-top: 1px; }
+.notice.warn { background: var(--warning-wash); border-color: var(--warning-line); }
+.notice.crit { background: var(--critical-wash); border-color: var(--critical-line); }
+.notice-text { flex: 1; }
+.notice-action { margin-left: 8px; white-space: nowrap; }
+.status-line { display: flex; align-items: center; gap: 8px; color: var(--ink-2); }
+.readonly-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: var(--sunken); border: 1px solid var(--border); color: var(--ink-2); }
+.readonly-banner .icon { color: var(--ink); }
+.readonly-banner strong { color: var(--ink); }
+.readonly-note { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; padding: 12px 14px; border-radius: 10px; background: var(--sunken); color: var(--ink-2); font-size: 13px; }
+.readonly-note .icon { margin-top: 2px; color: var(--ink); }
+.footnote { display: flex; gap: 8px; align-items: flex-start; color: var(--ink-2); font-size: 13px; max-width: 980px; }
+.footnote .icon { margin-top: 2px; flex: none; }
+
+/* ---------- Stat tiles ---------- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.tile { padding: 14px 16px 15px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.tile-label { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; }
+.tile-value { margin-top: 6px; font-size: 26px; line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; }
+.tile-line { margin-top: 4px; color: var(--ink-2); font-size: 12.5px; }
+.delta { display: inline-flex; align-items: center; gap: 4px; }
+.delta .icon { width: 13px; height: 13px; }
+.sw { display: inline-block; width: 10px; height: 10px; flex: none; border-radius: 2px; }
+.sw.reg { background: var(--reg); }
+.sw.ot { background: var(--ot); }
+
+/* ---------- Cards ---------- */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.card-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-height: 56px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.card-title { font-size: 15px; font-weight: 600; }
+.card-body { padding: 16px; }
+.card-foot { display: flex; justify-content: center; padding: 10px 16px; border-top: 1px solid var(--line); }
+.card-empty { padding: 20px 16px; color: var(--ink-2); }
+.card-actions { display: flex; gap: 8px; margin-top: 16px; }
+#report { scroll-margin-top: 72px; }
+
+/* ---------- Data tables ---------- */
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; }
+table.data th, table.data td { padding: 7px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; white-space: nowrap; }
+table.data thead th { padding-top: 8px; padding-bottom: 8px; color: var(--ink-2); font-size: 12px; font-weight: 600; background: var(--surface); }
+table.data tbody th { font-weight: 500; }
+table.data tfoot th, table.data tfoot td { background: var(--sunken); border-top: 1px solid var(--line-strong); border-bottom: 0; font-weight: 600; }
+table.data td.wrap { white-space: normal; min-width: 240px; }
+.sort-btn { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font-weight: inherit; }
+.sort-btn:hover { color: var(--ink); }
+.sort-ic { display: inline-flex; opacity: 0; }
+.sort-ic .icon { width: 12px; height: 12px; }
+.sort-btn:hover .sort-ic { opacity: 0.5; }
+.sort-ic.on { opacity: 1 !important; }
+.row-parent > * { background: var(--surface); }
+.row-parent:hover > * { background: var(--sunken); }
+.row-child > * { background: var(--surface); color: var(--ink-2); font-size: 13.5px; padding-top: 5px !important; padding-bottom: 5px !important; }
+.row-child .col-name { padding-left: 34px !important; }
+.row-child .name-link { color: var(--ink-2); }
+.row-detail > td { background: var(--sunken); white-space: normal; }
+.col-exp { width: 44px; padding-right: 0 !important; }
+.name-link { color: var(--ink); text-decoration: none; font-weight: 550; }
+.name-link:hover { text-decoration: underline; }
+.row-child .name-link { font-weight: 450; }
+.col-bar { width: 150px; }
+.col-flag { width: 150px; }
+.flag { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13px; }
+.legend-inline { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.legend-inline .sw:nth-of-type(2) { margin-left: 8px; }
+.no-match { padding: 28px 16px !important; text-align: center !important; color: var(--ink-2); }
+
+/* Mini stacked bar: 8px marks, 2px surface gap, 4px rounded data end. */
+.minibar { display: flex; align-items: center; gap: 2px; height: 22px; }
+.minibar .seg { display: block; height: 8px; flex: none; }
+.minibar .seg.reg { background: var(--reg); }
+.minibar .seg.ot { background: var(--ot); }
+.minibar .seg.end { border-radius: 0 4px 4px 0; }
+.minibar.lg { height: 26px; }
+.minibar.lg .seg { height: 10px; }
+.minibar.lg .seg.end { border-radius: 0 5px 5px 0; }
+
+/* ---------- Timesheet matrix ---------- */
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; color: var(--ink-2); font-size: 13px; }
+.legend-item { display: inline-flex; align-items: center; gap: 8px; }
+.lg-cell { display: inline-grid; place-items: center; width: 24px; height: 18px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); }
+.lg-cell.ot { background: var(--ot-wash); }
+.lg-cell.wknd { background: var(--wash-2); }
+.lg-cell .sw { width: 7px; height: 7px; border-radius: 1px; }
+.ring-ic { width: 11px; height: 11px; stroke-width: 3; color: var(--muted); }
+.legend .hint { color: var(--ink-3); }
+.matrix-wrap { overflow-x: auto; }
+table.matrix { width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0; }
+table.matrix th, table.matrix td { border-bottom: 1px solid var(--line); }
+table.matrix thead th { padding: 8px 4px; color: var(--ink-2); font-size: 12px; font-weight: 600; text-align: center; vertical-align: bottom; background: var(--surface); }
+table.matrix .rowhead {
+  position: sticky; left: 0; z-index: 1; min-width: 250px; max-width: 320px; padding: 8px 12px 8px 16px;
+  background: var(--surface); text-align: left; white-space: normal; font-weight: 500;
+}
+table.matrix thead .rowhead { vertical-align: bottom; }
+table.matrix tbody .rowhead .code { display: block; margin: 1px 0 0; }
+.dayhead .dow { display: block; }
+.dayhead .d { display: block; color: var(--ink); font-size: 15px; font-weight: 600; }
+.dayhead.out { opacity: 0.45; }
+.dayhead.today .d { text-decoration: underline; text-underline-offset: 3px; }
+table.matrix .wknd { background-color: var(--wash); }
+table.matrix thead .dayhead.wknd { background-image: linear-gradient(var(--wash), var(--wash)); background-color: var(--surface); }
+.sumhead { width: 92px; padding-right: 14px !important; text-align: right !important; white-space: nowrap; }
+.sumhead .sw { margin-right: 6px; vertical-align: -1px; }
+.sumhead.first, td.sum.first { border-left: 1px solid var(--line-strong); }
+td.cell { width: 80px; height: 58px; padding: 0; text-align: center; border-left: 1px solid var(--line); }
+td.cell.out > * { opacity: 0.4; }
+.cell-btn {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  width: 100%; height: 100%; min-height: 58px; padding: 6px 4px; border: 0; background: transparent;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.cell-btn:hover { background: var(--wash-2); }
+.cell-btn.has-ot { background: var(--ot-wash); }
+.cell-btn.has-ot:hover { background: var(--ot-wash-2); }
+.cell-btn:focus-visible { outline-offset: -2px; }
+.cell-total { display: inline-flex; align-items: center; gap: 2px; font-size: 14px; font-weight: 600; }
+.cell-ot { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); font-size: 11.5px; }
+.cell-ot .sw { width: 7px; height: 7px; border-radius: 1px; }
+.cell-flag { position: absolute; top: 5px; right: 5px; display: flex; }
+.cell-empty { color: var(--line-strong); }
+.cell-static { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 56px; font-variant-numeric: tabular-nums; }
+td.sum { width: 92px; padding: 8px 14px 8px 8px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.matrix tfoot th, table.matrix tfoot td { background-color: var(--sunken); border-top: 1px solid var(--line-strong); border-bottom: 0; font-weight: 600; }
+table.matrix tfoot .rowhead { background: var(--sunken); }
+table.matrix tfoot td.wknd { background-image: linear-gradient(var(--wash), var(--wash)); }
+
+/* ---------- Drawer ---------- */
+.drawer-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(11, 11, 11, 0.22); animation: fade 0.15s ease-out; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 61; width: min(460px, 100vw); display: flex; flex-direction: column;
+  background: var(--raised); border-left: 1px solid var(--border); box-shadow: var(--shadow); animation: slide 0.18s ease-out;
+}
+.drawer:focus { outline: none; }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+.drawer-head h2 { font-size: 18px; }
+.drawer-sub { margin-top: 4px; color: var(--ink-2); }
+.drawer-body { flex: 1; padding: 18px 20px 28px; overflow-y: auto; }
+.drawer-body h3 { margin: 22px 0 8px; font-size: 13px; font-weight: 650; }
+.drawer-body p + p { margin-top: 6px; }
+.calc { padding: 14px 16px; border-radius: 12px; background: var(--sunken); }
+.calc-total { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+.calc-total span { font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.calc-split { display: flex; gap: 18px; margin: 4px 0 2px; color: var(--ink-2); }
+.calc-split > span { display: inline-flex; align-items: center; gap: 7px; }
+.plain-list, .cards-list { list-style: none; margin: 0; padding: 0; }
+.plain-list li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.cards-list li { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.cards-list li + li { margin-top: 8px; }
+.card-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 2px; }
+
+/* ---------- Dialogs ---------- */
+.dialog-backdrop { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: rgba(11, 11, 11, 0.34); animation: fade 0.15s ease-out; }
+.dialog { width: min(560px, 100%); border-radius: 14px; background: var(--raised); border: 1px solid var(--border); box-shadow: var(--shadow); animation: pop 0.16s ease-out; }
+.dialog:focus { outline: none; }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 6px; }
+.dialog-head h2 { font-size: 18px; }
+.dialog-body { padding: 6px 20px 18px; }
+.dialog-body > p + p { margin-top: 8px; }
+.dialog-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--sunken); border-radius: 0 0 14px 14px; }
+.dlg-h3 { margin: 18px 0 4px; font-size: 14px; }
+.link-box { display: flex; gap: 8px; margin-top: 14px; }
+.link-box input { flex: 1; min-width: 0; font-size: 12.5px; }
+.waiting { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--ink-2); }
+.steps { margin: 12px 0; padding-left: 22px; }
+.steps li { padding-left: 4px; }
+.steps li + li { margin-top: 8px; }
+.sheet-list { margin: 10px 0 0; padding: 0; list-style: none; }
+.sheet-list li { display: flex; gap: 10px; padding: 8px 0; }
+.sheet-list li + li { border-top: 1px solid var(--line); }
+.sheet-list .icon { margin-top: 2px; color: var(--ink-2); }
+.sheet-preview { margin-top: 12px; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--raised); }
+.sheet-meta { padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: 11.5px; line-height: 1.5; }
+.sheet-meta strong { color: var(--ink); }
+table.sheet { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+table.sheet th, table.sheet td { padding: 4px 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+table.sheet th { background: var(--sunken); font-weight: 600; color: var(--ink-2); }
+table.sheet tr.sub td { font-weight: 600; background: var(--wash); }
+table.sheet tr.grand td { font-weight: 700; background: var(--wash-2); }
+table.sheet td.ell { color: var(--ink-3); text-align: center; }
+.sheet-tabs { display: flex; gap: 2px; padding: 0 8px; background: var(--sunken); border-top: 1px solid var(--line); }
+.sheet-tab { padding: 4px 12px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--ink-2); font-size: 11.5px; }
+.sheet-tab:hover { color: var(--ink); }
+.sheet-tab.on { background: var(--raised); color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+.rule-summary { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: var(--sunken); }
+.rule-summary .notice { margin-top: 10px; }
+.day-toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-toggle { height: 32px; min-width: 48px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--raised); color: var(--ink-2); font-weight: 500; }
+.day-toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+/* ---------- Toast & tooltip ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 90; max-width: min(560px, calc(100vw - 32px));
+  padding: 11px 16px; border-radius: 10px; background: var(--ink); color: var(--surface); box-shadow: var(--shadow);
+  opacity: 0; transform: translate(-50%, 16px); transition: opacity 0.2s, transform 0.2s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.tooltip {
+  position: fixed; z-index: 100; max-width: 300px; padding: 8px 10px; border-radius: 8px;
+  background: var(--ink); color: var(--surface); font-size: 12.5px; line-height: 1.45; box-shadow: var(--shadow);
+  pointer-events: none; white-space: pre-line;
+}
+.tip-row { display: flex; align-items: center; gap: 8px; }
+.tip-row strong { min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+.tip-label { opacity: 0.8; }
+.tip-key { width: 12px; height: 3px; border-radius: 2px; }
+.tip-key.reg { background: var(--reg); }
+.tip-key.ot { background: var(--ot); }
+
+/* ---------- Empty states ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 24px; text-align: center; }
+.empty-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 4px; border-radius: 12px; background: var(--wash-2); color: var(--ink-2); }
+.empty-icon .icon { width: 22px; height: 22px; }
+.empty h2 { font-size: 17px; }
+.empty p { max-width: 520px; color: var(--ink-2); }
+.empty .btn { margin-top: 8px; }
+
+/* ---------- Facts, sync, settings ---------- */
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 10px 20px; margin: 0; }
+dl.facts dt { color: var(--ink-2); }
+dl.facts dd { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }
+.sync-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.sync-actions { display: flex; flex-direction: column; gap: 14px; }
+.action { display: flex; align-items: flex-start; gap: 12px; }
+.action .btn { min-width: 170px; }
+.action p { color: var(--ink-2); font-size: 13px; padding-top: 2px; }
+.run-details { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 4px 2px; font-size: 13px; }
+.run-details ul { margin: 4px 0 0; padding-left: 18px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs a { padding: 8px 12px; color: var(--ink-2); font-weight: 500; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs a:hover { color: var(--ink); }
+.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.rules { display: flex; flex-direction: column; }
+.rule-line { display: grid; grid-template-columns: 130px 110px 1fr; gap: 16px; padding: 12px 0; }
+.rule-line + .rule-line { border-top: 1px solid var(--line); }
+.rule-line .k { font-weight: 600; }
+.rule-line .d { color: var(--ink-2); }
+.future { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.future > div { padding: 14px 16px; border-radius: 10px; border: 1px dashed var(--line-strong); }
+.future p { color: var(--ink-2); margin-top: 4px; font-size: 13px; }
+.roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.roles p { color: var(--ink-2); margin-top: 4px; }
+.role-select { height: 30px; }
+
+/* ---------- Sign in ---------- */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.login-card { width: min(420px, 100%); padding: 28px; }
+.login-card h1 { font-size: 22px; margin-bottom: 6px; }
+.login-card .btn.block { margin-top: 16px; }
+.login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+.login-foot { margin-top: 18px; }
+
+/* ---------- Prototype controls (not part of the design) ---------- */
+.proto { position: fixed; left: 16px; bottom: 16px; z-index: 80; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: #f4f3ef; font-size: 13px; }
+.proto-toggle {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px;
+  background: #2b2a27; color: #f4f3ef; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28); font-weight: 600;
+}
+.proto-body { width: 310px; padding: 14px; border-radius: 12px; background: #2b2a27; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32); }
+.proto-body h2 { margin: 0 0 6px; color: #c3c2b7; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.proto-group { margin-top: 12px; }
+.proto-group > span { display: block; margin-bottom: 6px; color: #c3c2b7; }
+.proto-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.proto-seg button { padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: transparent; color: #f4f3ef; }
+.proto-seg button[aria-pressed="true"] { background: #f4f3ef; border-color: #f4f3ef; color: #0b0b0b; }
+.proto-note { margin-top: 10px; color: #c3c2b7; line-height: 1.45; }
+.proto-links { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 12px; }
+.proto-links a, .proto-links button { padding: 0; border: 0; background: none; color: #9ec5f4; text-decoration: underline; text-underline-offset: 2px; }
+.proto :focus-visible { outline-color: #9ec5f4; }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 1100px) {
+  .sync-body { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .col-bar, .col-count, .col-days { display: none; }
+  .grid-2, .future, .roles { grid-template-columns: 1fr; }
+  .brand-name { display: none; }
+  .topbar-inner { gap: 16px; padding: 0 16px; }
+  .container { padding: 20px 16px 120px; }
+  .search input[type="search"] { width: 180px; }
+  table.matrix { min-width: 820px; }
+  table.matrix .rowhead { min-width: 140px; max-width: 170px; padding-left: 12px; font-size: 13px; }
+}
+@media (max-width: 640px) {
+  .fresh-label, .avatar-btn .icon { display: none; }
+  .topbar-inner { gap: 10px; }
+  .nav a { padding: 0 6px; white-space: nowrap; }
+  .fresh { padding: 0 7px; }
+  .rule-line { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (max-width: 420px) {
+  /* The failing-sync banner on each page still shows sync problems. */
+  .fresh { display: none; }
+}
+@media print {
+  .topbar, .proto, .toolbar, .btn, .chip, .seg-ctl, .search, .skip { display: none !important; }
+  body { background: #fff; }
+}
+</style>
+</head>
+<body>
+<noscript>This prototype needs JavaScript.</noscript>
+<div id="app"></div>
+<script>
+'use strict';
+
+// ===========================================================================
+// CRC Associates Hours: clickable UI prototype.
+// Sample data only. Nothing here talks to Raken or Supabase. The Regular/OT
+// calculation mirrors the database view daily_project_hours, so the numbers
+// follow the real rules. See README.md in this folder.
+// ===========================================================================
+
+// Fixed prototype clock, so the sample data always lines up.
+const TODAY = '2026-09-26';          // a Saturday
+const NOW = '2026-09-26T14:00:00';
+const DATA_START = '2026-08-03';     // first imported work date (sample)
+const DATA_END = '2026-09-25';       // last work date with sample time cards
+const RULES_START = '2000-01-01';    // the initial rule's "from the start" date
+
+// ---------------------------------------------------------------------------
+// DOM helpers. Text children always become text nodes, never HTML.
+// ---------------------------------------------------------------------------
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  let value;
+  if (props) {
+    for (const [key, v] of Object.entries(props)) {
+      if (v === null || v === undefined || v === false) continue;
+      if (key === 'class') el.className = v;
+      else if (key === 'style') Object.assign(el.style, v);
+      else if (key === 'tip') setTip(el, v);
+      else if (key === 'value') value = v;
+      else if (key.startsWith('on') && typeof v === 'function') el.addEventListener(key.slice(2).toLowerCase(), v);
+      else el.setAttribute(key, v === true ? '' : String(v));
+    }
+  }
+  appendKids(el, children);
+  if (value !== undefined) el.value = value; // after children, so <select> options exist
+  return el;
+}
+
+function appendKids(el, kids) {
+  for (const kid of kids.flat(Infinity)) {
+    if (kid === null || kid === undefined || kid === false || kid === true) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+  return el;
+}
+
+const ICON_PATHS = {
+  check: ['M20 6 9 17l-5-5'],
+  chevronDown: ['m6 9 6 6 6-6'],
+  chevronRight: ['m9 18 6-6-6-6'],
+  chevronLeft: ['m15 18-6-6 6-6'],
+  search: ['M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z', 'm20 20-4-4'],
+  download: ['M12 3v12', 'm7 10 5 5 5-5', 'M5 21h14'],
+  refresh: ['M21 12a9 9 0 0 1-15.4 6.4L3 16', 'M3 21v-5h5', 'M3 12a9 9 0 0 1 15.4-6.4L21 8', 'M21 3v5h-5'],
+  close: ['M18 6 6 18', 'm6 6 12 12'],
+  info: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M12 16v-4', 'M12 8h.01'],
+  shield: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'm9 12 2 2 4-4'],
+  link: ['M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7', 'M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'],
+  external: ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'],
+  copy: ['M9 9h11v11H9z', 'M5 15H4V4h11v1'],
+  ring: ['M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z'],
+  plus: ['M12 5v14', 'M5 12h14'],
+  mail: ['M3 5h18v14H3z', 'm3 6 9 7 9-7'],
+  arrowUp: ['M12 19V5', 'm5 12 7-7 7 7'],
+  arrowDown: ['M12 5v14', 'm19 12-7 7-7-7'],
+  sheet: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M8 13h8', 'M8 17h8'],
+  logout: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'm16 17 5-5-5-5', 'M21 12H9'],
+  spinner: ['M21 12a9 9 0 1 1-6.2-8.6'],
+  calendar: ['M4 5h16v16H4z', 'M16 3v4', 'M8 3v4', 'M4 11h16'],
+  plug: ['M9 2v6', 'M15 2v6', 'M6 8h12v4a6 6 0 0 1-12 0z', 'M12 18v4'],
+  sliders: ['M4 21v-7', 'M4 10V3', 'M12 21v-9', 'M12 8V3', 'M20 21v-5', 'M20 12V3', 'M1 14h6', 'M9 8h6', 'M17 16h6'],
+};
+
+function icon(name, cls) {
+  const svg = svgEl('svg', { viewBox: '0 0 24 24', class: 'icon' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true', focusable: 'false' });
+  for (const d of ICON_PATHS[name]) svg.append(svgEl('path', { d }));
+  return svg;
+}
+
+// Filled status icons: good (check), warn (triangle), crit (cross), info, off (empty ring).
+function statusIcon(kind) {
+  const svg = svgEl('svg', { viewBox: '0 0 20 20', class: 'status-icon ' + kind, 'aria-hidden': 'true', focusable: 'false' });
+  if (kind === 'good') {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 9 }), svgEl('path', { class: 'fg', d: 'm6 10.4 2.7 2.6L14.2 7.4' }));
+  } else if (kind === 'warn') {
+    svg.append(
+      svgEl('path', { class: 'bg', d: 'M8.7 2.3a1.5 1.5 0 0 1 2.6 0l7.5 13.2a1.5 1.5 0 0 1-1.3 2.2H2.5a1.5 1.5 0 0 1-1.3-2.2z' }),
+      svgEl('path', { class: 'fg', d: 'M10 7.4v4.2' }),
+      svgEl('circle', { class: 'dot', cx: 10, cy: 14.5, r: 1.15 }));
+  } else if (kind === 'crit') {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 9 }), svgEl('path', { class: 'fg', d: 'm7 7 6 6m0-6-6 6' }));
+  } else if (kind === 'info') {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 9 }), svgEl('path', { class: 'fg', d: 'M10 9v5' }), svgEl('circle', { class: 'dot', cx: 10, cy: 6.2, r: 1.15 }));
+  } else {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 7.5 }));
+  }
+  return svg;
+}
+
+// ---------------------------------------------------------------------------
+// Tooltip, toast, popover, dialog, drawer
+// ---------------------------------------------------------------------------
+
+const tipEl = h('div', { class: 'tooltip', id: 'tooltip', role: 'tooltip', hidden: true });
+const toastEl = h('div', { class: 'toast', role: 'status', 'aria-live': 'polite' });
+document.body.append(tipEl, toastEl);
+const tips = new WeakMap();
+
+function setTip(el, content) {
+  tips.set(el, content);
+  el.addEventListener('mouseenter', showTip);
+  el.addEventListener('focus', showTip);
+  el.addEventListener('mouseleave', hideTip);
+  el.addEventListener('blur', hideTip);
+}
+
+function showTip(event) {
+  const el = event.currentTarget;
+  const content = tips.get(el);
+  if (!content) return;
+  tipEl.replaceChildren(typeof content === 'function' ? content() : String(content));
+  tipEl.hidden = false;
+  const r = el.getBoundingClientRect();
+  const t = tipEl.getBoundingClientRect();
+  const x = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2, innerWidth - t.width - 8));
+  const y = r.top - t.height - 8 < 8 ? r.bottom + 8 : r.top - t.height - 8;
+  tipEl.style.left = x + 'px';
+  tipEl.style.top = y + 'px';
+}
+
+function hideTip() { tipEl.hidden = true; }
+
+let toastTimer;
+function toast(message) {
+  toastEl.textContent = message;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 4200);
+}
+
+let openPop = null;
+function openPopover(anchor, content, align) {
+  closePopover();
+  const pop = h('div', { class: 'popover' }, content);
+  document.body.append(pop);
+  const r = anchor.getBoundingClientRect();
+  const width = pop.offsetWidth;
+  const left = Math.max(8, Math.min(align === 'right' ? r.right - width : r.left, innerWidth - width - 8));
+  pop.style.left = left + scrollX + 'px';
+  pop.style.top = r.bottom + 6 + scrollY + 'px';
+  anchor.setAttribute('aria-expanded', 'true');
+  openPop = { pop, anchor };
+  setTimeout(() => document.addEventListener('mousedown', clickOutsidePop), 0);
+}
+
+function clickOutsidePop(event) {
+  if (openPop && !openPop.pop.contains(event.target) && !openPop.anchor.contains(event.target)) closePopover();
+}
+
+function closePopover() {
+  if (!openPop) return;
+  openPop.pop.remove();
+  openPop.anchor.setAttribute('aria-expanded', 'false');
+  document.removeEventListener('mousedown', clickOutsidePop);
+  openPop = null;
+}
+
+function trapTab(event) {
+  if (event.key !== 'Tab') return;
+  const items = [...event.currentTarget.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex="0"]')]
+    .filter((el) => el.offsetParent !== null);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (event.shiftKey && document.activeElement === first) { last.focus(); event.preventDefault(); }
+  else if (!event.shiftKey && document.activeElement === last) { first.focus(); event.preventDefault(); }
+}
+
+const dialogs = [];
+// body: nodes placed in the dialog body. raw: body brings its own
+// .dialog-body/.dialog-foot. actions: footer buttons, or (api) => buttons.
+function openDialog({ title, body, actions, width, raw }) {
+  closePopover();
+  const opener = document.activeElement;
+  const titleId = 'dialog-title-' + (dialogs.length + 1);
+  const api = {};
+  const panel = h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId, tabindex: '-1', style: width ? { width: `min(${width}, 100%)` } : null },
+    h('div', { class: 'dialog-head' },
+      h('h2', { id: titleId }, title),
+      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Close', onclick: () => api.close() }, icon('close'))));
+  panel.append(raw ? body : h('div', { class: 'dialog-body' }, body));
+  if (actions) panel.append(h('div', { class: 'dialog-foot' }, typeof actions === 'function' ? actions(api) : actions));
+  const backdrop = h('div', { class: 'dialog-backdrop', onmousedown: (e) => { if (e.target === backdrop) api.close(); } }, panel);
+  api.close = () => {
+    backdrop.remove();
+    const i = dialogs.indexOf(api);
+    if (i >= 0) dialogs.splice(i, 1);
+    if (opener && document.contains(opener)) opener.focus();
+  };
+  panel.addEventListener('keydown', trapTab);
+  document.body.append(backdrop);
+  dialogs.push(api);
+  const first = panel.querySelector('.dialog-body input:not([readonly]), .dialog-body select, .dialog-body textarea');
+  (first || panel).focus();
+  return api;
+}
+
+function confirmDialog({ title, text, confirmLabel, danger, onConfirm }) {
+  openDialog({
+    title,
+    body: h('p', null, text),
+    actions: (api) => [
+      h('button', { class: 'btn', type: 'button', onclick: () => api.close() }, 'Keep'),
+      h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), type: 'button', onclick: () => { api.close(); onConfirm(); } }, confirmLabel),
+    ],
+  });
+}
+
+let drawer = null;
+function openDrawer({ title, subtitle, body }) {
+  closeDrawer();
+  const opener = document.activeElement;
+  const panel = h('aside', { class: 'drawer', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'drawer-title', tabindex: '-1' },
+    h('div', { class: 'drawer-head' },
+      h('div', null, h('h2', { id: 'drawer-title' }, title), subtitle && h('p', { class: 'drawer-sub' }, subtitle)),
+      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Close', onclick: () => closeDrawer() }, icon('close'))),
+    h('div', { class: 'drawer-body' }, body));
+  const backdrop = h('div', { class: 'drawer-backdrop', onmousedown: () => closeDrawer() });
+  panel.addEventListener('keydown', trapTab);
+  document.body.append(backdrop, panel);
+  drawer = { panel, backdrop, opener };
+  panel.focus();
+}
+
+function closeDrawer() {
+  if (!drawer) return;
+  const { panel, backdrop, opener } = drawer;
+  drawer = null;
+  panel.remove();
+  backdrop.remove();
+  if (opener && document.contains(opener)) opener.focus();
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  if (openPop) { const anchor = openPop.anchor; closePopover(); anchor.focus(); return; }
+  if (dialogs.length) { dialogs[dialogs.length - 1].close(); return; }
+  if (drawer) closeDrawer();
+});
+
+// ---------------------------------------------------------------------------
+// Formatting and dates. Dates are 'YYYY-MM-DD' strings; weekdays are ISO
+// (1 = Monday ... 7 = Sunday), the same as the database.
+// ---------------------------------------------------------------------------
+
+const nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat('en-US');
+const fh = (n) => nf2.format(Math.abs(n) < 0.005 ? 0 : n);
+const plural = (n, one, many) => `${nf0.format(n)} ${n === 1 ? one : (many || one + 's')}`;
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DOW_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_MS = 86400000;
+
+const toD = (s) => new Date(s + 'T00:00:00Z');
+const toS = (d) => d.toISOString().slice(0, 10);
+const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(toD(s).getTime()) && toS(toD(s)) === s;
+const addDays = (s, n) => toS(new Date(toD(s).getTime() + n * DAY_MS));
+const isoDow = (s) => toD(s).getUTCDay() || 7;
+const weekStart = (s) => addDays(s, 1 - isoDow(s));
+const monthStart = (s) => s.slice(0, 8) + '01';
+const monthEnd = (s) => { const d = toD(monthStart(s)); d.setUTCMonth(d.getUTCMonth() + 1); return addDays(toS(d), -1); };
+const daysIn = (a, b) => Math.round((toD(b) - toD(a)) / DAY_MS) + 1;
+function eachDay(a, b) { const out = []; for (let s = a; s <= b; s = addDays(s, 1)) out.push(s); return out; }
+
+function fmtDate(s, opts = {}) {
+  const d = toD(s);
+  let text = MON[d.getUTCMonth()] + ' ' + d.getUTCDate();
+  if (opts.year) text += ', ' + d.getUTCFullYear();
+  if (opts.dow) text = DOW[isoDow(s) - 1] + ', ' + text;
+  return text;
+}
+
+function fmtRange(a, b) {
+  const da = toD(a);
+  const db = toD(b);
+  if (a === b) return fmtDate(a, { year: true });
+  if (da.getUTCFullYear() !== db.getUTCFullYear()) return `${fmtDate(a, { year: true })} – ${fmtDate(b, { year: true })}`;
+  if (da.getUTCMonth() === db.getUTCMonth()) return `${MON[da.getUTCMonth()]} ${da.getUTCDate()} – ${db.getUTCDate()}, ${da.getUTCFullYear()}`;
+  return `${fmtDate(a)} – ${fmtDate(b)}, ${da.getUTCFullYear()}`;
+}
+
+// Timestamps are 'YYYY-MM-DDTHH:MM:SS' in local time.
+const tsMs = (t) => Date.parse(t + 'Z');
+const addSeconds = (t, s) => new Date(tsMs(t) + s * 1000).toISOString().slice(0, 19);
+function fmtClock(t) {
+  const hh = Number(t.slice(11, 13));
+  return `${hh % 12 || 12}:${t.slice(14, 16)} ${hh < 12 ? 'AM' : 'PM'}`;
+}
+function fmtWhen(t) {
+  const d = t.slice(0, 10);
+  const day = d === TODAY ? 'Today' : d === addDays(TODAY, -1) ? 'Yesterday' : fmtDate(d, { year: d.slice(0, 4) !== TODAY.slice(0, 4) });
+  return `${day}, ${fmtClock(t)}`;
+}
+function ago(t) {
+  const min = Math.floor((tsMs(NOW) - tsMs(t)) / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr === 1 ? '1 hour ago' : `${hr} hours ago`;
+  const days = Math.floor(hr / 24);
+  return days === 1 ? 'yesterday' : `${days} days ago`;
+}
+function duration(a, b) {
+  const s = Math.round((tsMs(b) - tsMs(a)) / 1000);
+  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`;
+}
+function listJoin(items) {
+  return items.length <= 1 ? (items[0] || '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+const sortedDays = (days) => [...days].sort((a, b) => a - b);
+const weekendNames = (days) => (days.length ? listJoin(sortedDays(days).map((d) => DOW_LONG[d - 1] + 's')) : 'no days');
+function dayRangeLabel(days) {
+  const s = sortedDays(days);
+  if (!s.length) return 'None';
+  const runs = s.every((d, i) => i === 0 || d === s[i - 1] + 1);
+  return runs && s.length > 2 ? `${DOW[s[0] - 1]}–${DOW[s[s.length - 1] - 1]}` : s.map((d) => DOW[d - 1]).join(', ');
+}
+
+// ---------------------------------------------------------------------------
+// Sample data (copies of Raken records, as the sync would store them)
+// ---------------------------------------------------------------------------
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const PROJECTS = [
+  { id: 1, name: 'Riverside Medical Office Building', number: '24-112', status: 'ACTIVE' },
+  { id: 2, name: 'Harbor Point Parking Garage', number: '25-003', status: 'ACTIVE' },
+  { id: 3, name: 'Maple Street Elementary Renovation', number: '24-118', status: 'INACTIVE' },
+  { id: 4, name: 'Route 9 Bridge Deck Repair', number: '25-011', status: 'ACTIVE' },
+  { id: 5, name: 'Oakmont Apartments Phase 2', number: '25-019', status: 'ACTIVE' },
+  { id: 6, name: 'Downtown Library HVAC Upgrade', number: '25-024', status: 'ACTIVE' },
+  { id: 7, name: 'Westfield Distribution Center Fit-Out', number: '25-031', status: 'ACTIVE' },
+  { id: 8, name: 'Shop & Yard', number: null, status: 'ACTIVE' },
+];
+
+// [id, name, employee code, usual project, second project, last day worked]
+const EMPLOYEES = [
+  [1, 'Marcus Reyes', 'E1001', 1, 2],
+  [2, 'Aisha Johnson', 'E1002', 1, 6],
+  [3, 'Tom Kowalski', 'E1003', 1, 2],
+  [4, 'Luis Hernández', 'E1004', 2, 1],
+  [5, "Brian O'Neill", 'E1005', 3, 8, '2026-09-04'],
+  [6, 'Keisha Williams', 'E1006', 2, 5],
+  [7, 'David Chen', 'E1007', 4, 8],
+  [8, 'Samuel Okafor', 'E1008', 4, 2],
+  [9, 'Jake Miller', 'E1009', 5, 8],
+  [10, 'Priya Natarajan', 'E1010', 6, 1],
+  [11, 'Carlos Ruiz', 'E1011', 5, 4],
+  [12, 'Ethan Brooks', 'E1012', 3, 8],
+  [13, 'Dmitri Volkov', 'E1013', 4, 5],
+  [14, 'Andre Thompson', 'E1014', 7, 3],
+  [15, 'Mike Sullivan', 'E1015', 1, 8],
+  [16, 'Jorge Castillo', 'E1016', 2, 4],
+  [17, 'Kevin Nguyen', 'E1017', 6, 7],
+  [18, 'Rosa Martinez', 'E1018', 5, 1],
+  [19, 'Tyler Anderson', 'E1019', 3, 2],
+  [20, 'Hector Morales', 'E1020', 4, 1],
+  [21, 'Nate Fischer', 'E1021', 7, 6],
+  [22, 'Omar Haddad', 'E1022', 8, 7],
+].map(([id, name, code, primary, secondary, lastDay]) => ({ id, name, code, primary, secondary, lastDay: lastDay || null, active: !lastDay }));
+
+const EMP = new Map(EMPLOYEES.map((e) => [e.id, e]));
+const PROJ = new Map(PROJECTS.map((p) => [p.id, p]));
+
+// Time cards: one worker, one project, one day each (like Raken).
+const ENTRIES = [];
+(function generateTimeCards() {
+  const rnd = mulberry32(20260926);
+  const pick = (list) => list[Math.floor(rnd() * list.length)];
+  const weighted = (pairs) => { let r = rnd(); for (const [v, w] of pairs) { r -= w; if (r < 0) return v; } return pairs[pairs.length - 1][0]; };
+  const hex = (n) => { let s = ''; for (let i = 0; i < n; i++) s += Math.floor(rnd() * 16).toString(16); return s; };
+  const uuid = () => `${hex(8)}-${hex(4)}-4${hex(3)}-${pick(['8', '9', 'a', 'b'])}${hex(3)}-${hex(12)}`;
+  const pad = (n) => String(n).padStart(2, '0');
+  const HOURS = [[8, 0.58], [8.5, 0.08], [9, 0.1], [10, 0.1], [7.5, 0.05], [6, 0.04], [10.5, 0.02], [12, 0.03]];
+  const SPLITS = [[6, 3], [5, 5], [6, 4], [4, 4], [7, 2], [9, 2], [5, 4], [8, 2], [10, 1]];
+  const MAPLE_DONE = '2026-09-11'; // project 3 finished; its crews moved on
+  let id = 1;
+  const card = (emp, proj, date, hours, extra) => ENTRIES.push({
+    id: id++, raken_id: uuid(), employee_id: emp, project_id: proj, work_date: date, hours,
+    approved: true, raken_updated_at: null, deleted_at: null, ...extra,
+  });
+  // Now and then one day on one project is entered as two time cards.
+  const work = (emp, proj, date, hours) => {
+    if (hours >= 8 && rnd() < 0.06) {
+      const first = Math.floor(hours / 2);
+      card(emp, proj, date, first);
+      card(emp, proj, date, hours - first);
+    } else {
+      card(emp, proj, date, hours);
+    }
+  };
+
+  for (const date of eachDay(DATA_START, DATA_END)) {
+    const dow = isoDow(date);
+    for (const e of EMPLOYEES) {
+      if (e.id === 1 && date >= '2026-09-14' && date <= '2026-09-20') continue; // scripted below
+      if (e.lastDay && date > e.lastDay) continue;
+      const main = e.primary === 3 && date > MAPLE_DONE ? 7 : e.primary;
+      let other = e.secondary === 3 && date > MAPLE_DONE ? 8 : e.secondary;
+      if (other === main) other = 8;
+      if (dow <= 5) {
+        const r = rnd();
+        if (r < 0.03) continue; // day off
+        if (r < 0.11) {
+          const [a, b] = pick(SPLITS);
+          work(e.id, main, date, a);
+          work(e.id, other, date, b);
+        } else if (r < 0.14 && main !== 8) {
+          work(e.id, 8, date, 8); // shop day
+        } else {
+          work(e.id, main, date, weighted(HOURS));
+        }
+      } else if (dow === 6) {
+        if (rnd() < 0.18) work(e.id, main, date, pick([4, 5, 6, 8]));
+      } else if (rnd() < 0.03) {
+        work(e.id, main, date, pick([3, 4, 5]));
+      }
+    }
+  }
+
+  // Marcus Reyes, week of Sep 14: the examples in REQUIREMENTS.md and
+  // supabase/checks/ot_rules_check.sql (project 1 = A, project 2 = B).
+  const A = 1;
+  const B = 2;
+  for (const [date, proj, hours] of [
+    ['2026-09-14', A, 10], ['2026-09-15', A, 6], ['2026-09-15', B, 5], ['2026-09-16', A, 9], ['2026-09-16', B, 2],
+    ['2026-09-17', A, 5], ['2026-09-17', A, 4], ['2026-09-18', A, 8], ['2026-09-19', A, 5],
+    ['2026-09-20', A, 3], ['2026-09-20', B, 2],
+  ]) card(1, proj, date, hours);
+  // Deleted in Raken after the first import: kept, but never counted.
+  card(1, B, '2026-09-14', 5, { deleted_at: '2026-09-22T10:31:00' });
+
+  // Approval: older weeks are approved; the current week is still in progress.
+  for (const c of ENTRIES) {
+    const dow = isoDow(c.work_date);
+    if (c.work_date >= '2026-09-21') c.approved = rnd() < (dow <= 3 ? 0.85 : 0.3);
+    const lag = c.work_date >= '2026-09-24' ? 0 : (c.approved ? 1 : 0);
+    c.raken_updated_at = c.deleted_at || `${addDays(c.work_date, lag)}T${pad(15 + Math.floor(rnd() * 4))}:${pad(Math.floor(rnd() * 60))}:00`;
+  }
+  // Last week: a few Friday/Saturday time cards are still waiting for approval.
+  const waiting = ENTRIES.filter((c) => c.employee_id !== 1 && !c.deleted_at && (c.work_date === '2026-09-18' || c.work_date === '2026-09-19'));
+  for (const i of [2, 9, 15, 21]) if (waiting[i]) waiting[i].approved = false;
+})();
+
+// Raken connection as stored in Vault (only the non-secret fields are shown).
+const CONNECTION = {
+  name: 'Dana Whitfield',
+  email: 'dana.whitfield@example.com',
+  roleLabel: 'Account Administrator',
+  connected_at: '2026-09-21T08:55:31',
+  refreshed_at: '2026-09-26T09:48:03',
+};
+const RAKEN_LINK = 'https://app.rakenapp.com/oauth/authorize?response_type=code&client_id=…&redirect_uri=…%2Ffunctions%2Fv1%2Fraken-auth%2Fcallback%2F…';
+const FAIL_MESSAGE = 'Raken sign-in expired or was revoked (invalid_grant). Connect Raken again.';
+
+const emptySummary = () => ({ employees: 0, projects: 0, time_cards_saved: 0, time_cards_deleted: 0, windows: [], skipped: [], skipped_count: 0, warnings: [] });
+
+// sync_runs rows: the first import, then hourly automatic runs and one manual run.
+const BASE_RUNS = (function makeRuns() {
+  const rnd = mulberry32(42);
+  const iso = (ms) => new Date(ms).toISOString().slice(0, 19);
+  const summary = (extra) => ({ ...emptySummary(), employees: EMPLOYEES.length, projects: PROJECTS.length, ...extra });
+  const runs = [];
+  let id = 1;
+  runs.push({
+    id: id++, started_at: '2026-09-21T09:02:10', finished_at: '2026-09-21T09:05:51', status: 'success', mode: 'range',
+    params: { from: DATA_START, to: '2026-09-20' },
+    summary: summary({
+      time_cards_saved: ENTRIES.filter((c) => c.work_date <= '2026-09-20' && !c.deleted_at).length + 1,
+      windows: ['2026-08-03..2026-09-01', '2026-09-02..2026-09-20'],
+      skipped: [{ uuid: '5e1c07aa-93b1-4c2e-9f0d-2b61c8e4a7d3', reason: 'Missing worker or project' }],
+      skipped_count: 1,
+    }),
+  });
+  let prev = tsMs('2026-09-21T09:02:10');
+  for (let t = tsMs('2026-09-21T09:48:00'); t <= tsMs('2026-09-26T13:48:00'); t += 3600000) {
+    const started = iso(t + Math.floor(rnd() * 15) * 1000);
+    const at = new Date(t);
+    const busy = at.getUTCDay() !== 6 && at.getUTCHours() >= 15 && at.getUTCHours() <= 20;
+    const saved = busy ? 6 + Math.floor(rnd() * 34) : Math.floor(rnd() * 3);
+    const secs = 5 + Math.floor(rnd() * 8) + Math.floor(saved / 6);
+    runs.push({
+      id: id++, started_at: started, finished_at: iso(tsMs(started) + secs * 1000), status: 'success', mode: 'incremental',
+      params: { force: false }, summary: summary({ time_cards_saved: saved, windows: [`${iso(prev - 600000)}Z..${started}Z`] }),
+    });
+    prev = tsMs(started);
+  }
+  runs.push({
+    id: id++, started_at: '2026-09-25T16:12:40', finished_at: '2026-09-25T16:12:52', status: 'success', mode: 'incremental',
+    params: { force: true }, summary: summary({ time_cards_saved: 11, windows: ['2026-09-25T15:38:10Z..2026-09-25T16:12:40Z'] }),
+  });
+  runs.sort((a, b) => b.started_at.localeCompare(a.started_at));
+  const withSkip = runs.find((r) => r.started_at.startsWith('2026-09-26T09:4'));
+  if (withSkip) Object.assign(withSkip.summary, { skipped: [{ uuid: 'c41f9e02-7d5a-4b8e-a1f3-6e0d92b5c718', reason: 'Missing worker or project' }], skipped_count: 1 });
+  const withDelete = runs.find((r) => r.started_at.startsWith('2026-09-22T10:4'));
+  if (withDelete) withDelete.summary.time_cards_deleted = 1;
+  return runs;
+})();
+
+// ot_rules rows (effective-dated).
+const RULES = [
+  { id: 1, effective_from: RULES_START, threshold: 8, weekend_days: [6, 7], note: 'Initial rules: over 8 h on one project on a weekday is OT; all Saturday/Sunday hours are OT.' },
+];
+
+// ---------------------------------------------------------------------------
+// Regular/OT calculation. Same logic as the view daily_project_hours:
+// per employee + project + day, with the rule in effect on that day.
+// ---------------------------------------------------------------------------
+
+function ruleFor(date) {
+  let best = null;
+  for (const r of RULES) if (r.effective_from <= date && (!best || r.effective_from > best.effective_from)) best = r;
+  return best;
+}
+
+function ruleParams(date) {
+  const rule = ruleFor(date);
+  return { rule, threshold: rule ? rule.threshold : 8, weekendDays: rule ? rule.weekend_days : [6, 7] };
+}
+
+const isWeekend = (date) => ruleParams(date).weekendDays.includes(isoDow(date));
+
+function entriesIn(from, to, filter) {
+  return ENTRIES.filter((c) => !c.deleted_at && c.work_date >= from && c.work_date <= to && (!filter || filter(c)));
+}
+
+function dailyRows(from, to, filter) {
+  const byKey = new Map();
+  for (const c of entriesIn(from, to, filter)) {
+    const key = `${c.employee_id}|${c.project_id}|${c.work_date}`;
+    let d = byKey.get(key);
+    if (!d) {
+      d = { employee_id: c.employee_id, project_id: c.project_id, work_date: c.work_date, total: 0, all_approved: true, cards: [] };
+      byKey.set(key, d);
+    }
+    d.total += c.hours;
+    d.all_approved = d.all_approved && c.approved === true;
+    d.cards.push(c);
+  }
+  const rows = [...byKey.values()];
+  for (const d of rows) {
+    const { rule, threshold, weekendDays } = ruleParams(d.work_date);
+    d.rule = rule;
+    d.threshold = threshold;
+    d.is_weekend = weekendDays.includes(isoDow(d.work_date));
+    d.regular = d.is_weekend ? 0 : Math.min(d.total, threshold);
+    d.ot = d.is_weekend ? d.total : Math.max(d.total - threshold, 0);
+  }
+  return rows;
+}
+
+function sumRows(rows) {
+  let reg = 0; let ot = 0; let total = 0; let weekendOt = 0;
+  for (const d of rows) {
+    reg += d.regular;
+    ot += d.ot;
+    total += d.total;
+    if (d.is_weekend) weekendOt += d.ot;
+  }
+  return { reg, ot, total, weekendOt, weekdayOt: ot - weekendOt };
+}
+
+// Employee -> project (or project -> employee) totals for the report table.
+function buildTree(rows, group) {
+  const parentKey = group === 'project' ? 'project_id' : 'employee_id';
+  const childKey = group === 'project' ? 'employee_id' : 'project_id';
+  const childKind = group === 'project' ? 'employee' : 'project';
+  const parents = new Map();
+  for (const d of rows) {
+    let p = parents.get(d[parentKey]);
+    if (!p) { p = makeNode(group, d[parentKey]); parents.set(d[parentKey], p); }
+    let c = p.kids.get(d[childKey]);
+    if (!c) { c = makeNode(childKind, d[childKey]); p.kids.set(d[childKey], c); }
+    const waiting = d.cards.filter((x) => x.approved !== true).length;
+    for (const n of [p, c]) {
+      n.reg += d.regular;
+      n.ot += d.ot;
+      n.total += d.total;
+      n.dates.add(d.work_date);
+      n.unapproved += waiting;
+    }
+  }
+  return [...parents.values()].map((p) => ({ ...p, children: [...p.kids.values()] }));
+}
+
+function makeNode(kind, id) {
+  const ent = kind === 'employee' ? EMP.get(id) : PROJ.get(id);
+  return {
+    kind, id, name: ent.name,
+    sub: kind === 'employee' ? ent.code : ent.number,
+    inactive: kind === 'employee' ? !ent.active : ent.status !== 'ACTIVE',
+    reg: 0, ot: 0, total: 0, dates: new Set(), unapproved: 0, kids: new Map(),
+  };
+}
+
+function sortNodes(list, sort) {
+  const dir = sort.dir === 'desc' ? -1 : 1;
+  const value = (n) => (sort.key === 'days' ? n.dates.size : n[sort.key]);
+  return [...list].sort((a, b) => {
+    const byName = a.name.localeCompare(b.name);
+    if (sort.key === 'name') return byName * dir;
+    return (value(a) - value(b)) * dir || byName;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Prototype state
+// ---------------------------------------------------------------------------
+
+const S = {
+  signedIn: true,
+  scenario: 'normal',      // normal | failed | disconnected
+  role: 'admin',           // admin | viewer
+  theme: 'auto',           // auto | light | dark
+  protoOpen: false,
+  expanded: new Set(),
+  sort: { key: 'name', dir: 'asc' },
+  search: '',
+  onlyOT: false,
+  onlyUnapproved: false,
+  runsShown: 10,
+  running: null,
+  extraRuns: [],
+  loginSent: null,
+  users: [
+    { name: 'Suresh', email: 'suresh@example.com', role: 'admin', you: true, last: '2026-09-26T13:55:00' },
+    { name: 'Dana Whitfield', email: 'dana.whitfield@example.com', role: 'admin', last: '2026-09-21T08:50:00' },
+    { name: 'Linda Park', email: 'linda.park@example.com', role: 'viewer', last: '2026-09-25T10:14:00' },
+    { name: 'Ray Donnelly', email: 'ray.donnelly@example.com', role: 'viewer', last: '2026-09-24T07:31:00' },
+    { name: null, email: 'carla.mendes@example.com', role: 'viewer', invited: '2026-09-25T15:02:00' },
+  ],
+};
+let nextRunId = 5000;
+let nextRuleId = 2;
+
+function allRuns() {
+  let base = S.scenario === 'disconnected' ? [] : BASE_RUNS;
+  if (S.scenario === 'failed') {
+    let failed = 0;
+    base = base.map((run) => {
+      if (failed >= 2 || run.mode !== 'incremental') return run;
+      failed += 1;
+      return { ...run, status: 'error', finished_at: addSeconds(run.started_at, 2), summary: emptySummary(), error: FAIL_MESSAGE };
+    });
+  }
+  return [...S.extraRuns, ...base];
+}
+
+function syncState() {
+  if (S.scenario === 'disconnected') return { kind: 'off', label: 'Raken not connected', last: null, lastOk: null };
+  const runs = allRuns();
+  const lastOk = runs.find((r) => r.status === 'success') || null;
+  if (S.running) return { kind: 'running', label: 'Syncing…', last: runs[0], lastOk };
+  const last = runs[0] || null;
+  if (last && last.status === 'error') return { kind: 'crit', label: 'Sync failing', last, lastOk };
+  return { kind: 'good', label: last ? `Synced ${ago(last.finished_at)}` : 'Not synced yet', last, lastOk };
+}
+
+// ---------------------------------------------------------------------------
+// Routing: #/hours, #/hours/employee/<id>, #/hours/project/<id>, #/sync,
+// #/settings/ot-rules, #/settings/users, #/login. Range and grouping live in
+// the URL, so any view can be bookmarked or shared.
+// ---------------------------------------------------------------------------
+
+function route() {
+  const raw = location.hash.replace(/^#/, '') || '/hours';
+  const [path, qs] = raw.split('?');
+  return { path, q: new URLSearchParams(qs || ''), parts: path.split('/').filter(Boolean) };
+}
+
+function href(path, params) {
+  const qs = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== null && v !== undefined && v !== '')).toString();
+  return '#' + path + (qs ? '?' + qs : '');
+}
+
+function go(path, params) {
+  const target = href(path, params);
+  if (location.hash === target) render();
+  else location.hash = target;
+}
+
+function presets() {
+  const week = weekStart(TODAY);
+  const lastMonthStart = monthStart(addDays(monthStart(TODAY), -1));
+  return [
+    { label: 'This week', from: week, to: addDays(week, 6) },
+    { label: 'Last week', from: addDays(week, -7), to: addDays(week, -1) },
+    { label: 'Last 2 weeks', from: addDays(week, -14), to: addDays(week, -1) },
+    { label: 'This month', from: monthStart(TODAY), to: monthEnd(TODAY) },
+    { label: 'Last month', from: lastMonthStart, to: monthEnd(lastMonthStart) },
+  ];
+}
+const LAST_WEEK = () => presets()[1];
+
+function currentRange(q) {
+  const from = q.get('from');
+  const to = q.get('to');
+  if (isDate(from) && isDate(to) && from <= to && daysIn(from, to) <= 366) return { from, to };
+  const p = LAST_WEEK();
+  return { from: p.from, to: p.to };
+}
+
+// Whole months step by month; anything else steps by its own length.
+function stepRange(from, to, dir) {
+  if (from === monthStart(from) && to === monthEnd(from)) {
+    const start = dir > 0 ? addDays(to, 1) : monthStart(addDays(from, -1));
+    return [start, monthEnd(start)];
+  }
+  const n = daysIn(from, to) * dir;
+  return [addDays(from, n), addDays(to, n)];
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
+let lastPath = null;
+
+function render() {
+  applyTheme();
+  closePopover();
+  hideTip();
+  const r = route();
+  const y = scrollY;
+  const root = document.getElementById('app');
+  root.replaceChildren();
+  if (r.parts[0] === 'login') S.signedIn = false;
+  if (!S.signedIn) {
+    root.append(pageLogin());
+  } else {
+    root.append(
+      h('button', { class: 'skip', type: 'button', onclick: () => document.getElementById('main').focus() }, 'Skip to content'),
+      topbar(r),
+      h('main', { id: 'main', class: 'container', tabindex: '-1' }, pageFor(r)));
+  }
+  root.append(protoPanel());
+  scrollTo(0, r.path === lastPath ? y : 0);
+  lastPath = r.path;
+}
+
+function pageFor(r) {
+  const [section, sub, id] = r.parts;
+  if (section === 'sync') return pageSync();
+  if (section === 'settings') return pageSettings(sub);
+  if (section === 'hours' && (sub === 'employee' || sub === 'project')) return pageEntity(r, sub, Number(id));
+  return pageHours(r);
+}
+
+function applyTheme() {
+  if (S.theme === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', S.theme);
+}
+
+window.addEventListener('hashchange', () => { closeDrawer(); render(); });
+
+// ---------------------------------------------------------------------------
+// Shared pieces
+// ---------------------------------------------------------------------------
+
+function topbar(r) {
+  const section = r.parts[0] || 'hours';
+  const nav = (id, label, path) => h('a', { href: '#' + path, 'aria-current': section === id ? 'page' : null }, label);
+  return h('header', { class: 'topbar' },
+    h('div', { class: 'topbar-inner' },
+      h('a', { class: 'brand', href: '#/hours', 'aria-label': 'CRC Associates Hours, home' },
+        h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'CRC'),
+        h('span', { class: 'brand-name' }, 'CRC Associates')),
+      h('nav', { class: 'nav', 'aria-label': 'Main' },
+        nav('hours', 'Hours', '/hours'),
+        nav('sync', 'Raken sync', '/sync'),
+        nav('settings', 'Settings', '/settings/ot-rules')),
+      h('div', { class: 'spacer' }),
+      freshnessPill(),
+      userMenu()));
+}
+
+function freshnessPill() {
+  const st = syncState();
+  let tip = null;
+  if (st.kind === 'good' && st.last) tip = `Raken data as of ${fmtWhen(st.last.finished_at)}. Syncs every hour.`;
+  if (st.kind === 'crit') tip = st.lastOk ? `Last successful sync: ${fmtWhen(st.lastOk.finished_at)}.` : 'No successful sync yet.';
+  return h('a', { class: 'fresh ' + st.kind, href: '#/sync', tip },
+    st.kind === 'running' ? icon('spinner', 'spin') : statusIcon(st.kind),
+    h('span', { class: 'fresh-label' }, st.label));
+}
+
+function userMenu() {
+  const btn = h('button', {
+    class: 'avatar-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false',
+    onclick: () => {
+      if (openPop && openPop.anchor === btn) { closePopover(); return; }
+      openPopover(btn, h('div', { class: 'menu', role: 'menu' },
+        h('div', { class: 'menu-head' }, h('strong', null, 'Suresh'), h('span', null, S.role === 'admin' ? 'Admin' : 'Viewer')),
+        h('button', { class: 'menu-item', type: 'button', role: 'menuitem', onclick: () => { closePopover(); S.signedIn = false; go('/login'); } }, icon('logout'), 'Sign out')), 'right');
+    },
+  }, h('span', { class: 'avatar', 'aria-hidden': 'true' }, 'S'), h('span', { class: 'sr-only' }, 'Account menu for Suresh'), icon('chevronDown'));
+  return btn;
+}
+
+function notice(kind, ...content) {
+  return h('div', { class: 'notice ' + kind, role: kind === 'crit' ? 'alert' : 'status' }, statusIcon(kind), h('div', { class: 'notice-text' }, content));
+}
+
+function syncNotices() {
+  const st = syncState();
+  if (st.kind !== 'crit') return [];
+  return [notice('crit',
+    h('strong', null, 'Raken sync is failing. '),
+    st.lastOk
+      ? `These hours are from the last successful sync, ${ago(st.lastOk.finished_at)} (${fmtWhen(st.lastOk.finished_at)}). Changes made in Raken since then are missing.`
+      : 'Changes made in Raken are missing.',
+    h('a', { class: 'notice-action', href: '#/sync' }, 'Go to Raken sync'))];
+}
+
+function emptyState({ iconName, title, text, action }) {
+  return h('div', { class: 'card empty' }, h('div', { class: 'empty-icon' }, icon(iconName || 'info')), h('h2', null, title), text ? h('p', null, text) : null, action || null);
+}
+
+function segmented(options, current, onPick, label) {
+  return h('div', { class: 'seg-ctl', role: 'group', 'aria-label': label },
+    options.map(([value, text]) => h('button', { type: 'button', 'aria-pressed': String(value === current), onclick: () => { if (value !== current) onPick(value); } }, text)));
+}
+
+function tile({ label, swatch, value, lines }) {
+  return h('div', { class: 'tile' },
+    h('div', { class: 'tile-label' }, swatch ? h('span', { class: 'sw ' + swatch }) : null, label),
+    h('div', { class: 'tile-value' }, value),
+    (lines || []).map((line) => h('div', { class: 'tile-line' }, line)));
+}
+
+function field(label, input, hint) {
+  if (!input.id) input.id = 'f-' + Math.random().toString(36).slice(2, 9);
+  return h('div', { class: 'field' }, h('label', { for: input.id }, label), input, hint ? h('p', { class: 'field-hint' }, hint) : null);
+}
+
+const fact = (term, ...desc) => h('div', { style: { display: 'contents' } }, h('dt', null, term), h('dd', null, desc));
+const th = (label, cls) => h('th', { scope: 'col', class: cls || null }, label);
+const infoTip = (text) => h('button', { class: 'info-tip', type: 'button', 'aria-label': text, tip: text }, icon('info'));
+
+function tipRows(rows) {
+  return h('div', null, rows.map(([key, label, value]) =>
+    h('div', { class: 'tip-row' }, h('span', { class: 'tip-key' + (key ? ' ' + key : '') }), h('strong', null, value), h('span', { class: 'tip-label' }, label))));
+}
+
+// Stacked Regular + OT bar on a shared scale (max = the longest bar).
+function miniBar(reg, ot, max, width = 120, large = false) {
+  const scale = max > 0 ? (width - 4) / max : 0;
+  const bar = h('div', {
+    class: 'minibar' + (large ? ' lg' : ''), style: { width: width + 'px' }, 'aria-hidden': 'true',
+    tip: () => tipRows([['reg', 'Regular', fh(reg)], ['ot', 'OT', fh(ot)], [null, 'Total', fh(reg + ot)]]),
+  });
+  if (reg > 0) bar.append(h('span', { class: 'seg reg' + (ot > 0 ? '' : ' end'), style: { width: Math.max(reg * scale, 2) + 'px' } }));
+  if (ot > 0) bar.append(h('span', { class: 'seg ot end', style: { width: Math.max(ot * scale, 3) + 'px' } }));
+  return bar;
+}
+
+function rangeControl(path, q, from, to) {
+  const preset = presets().find((p) => p.from === from && p.to === to);
+  const keep = Object.fromEntries(q);
+  const [pf, pt] = stepRange(from, to, -1);
+  const [nf, nt] = stepRange(from, to, 1);
+  const btn = h('button', { class: 'range-btn', type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', onclick: () => openRangePicker(btn, path, keep, from, to) },
+    icon('calendar'), h('span', null, fmtRange(from, to)), preset ? h('span', { class: 'preset' }, preset.label) : null, icon('chevronDown'));
+  return h('div', { class: 'range' },
+    h('a', { class: 'icon-btn', href: href(path, { ...keep, from: pf, to: pt }), 'aria-label': `Previous: ${fmtRange(pf, pt)}`, tip: fmtRange(pf, pt) }, icon('chevronLeft')),
+    btn,
+    h('a', { class: 'icon-btn', href: href(path, { ...keep, from: nf, to: nt }), 'aria-label': `Next: ${fmtRange(nf, nt)}`, tip: fmtRange(nf, nt) }, icon('chevronRight')));
+}
+
+function openRangePicker(anchor, path, keep, from, to) {
+  if (openPop && openPop.anchor === anchor) { closePopover(); return; }
+  const apply = (f, t) => { closePopover(); go(path, { ...keep, from: f, to: t }); };
+  const fromIn = h('input', { type: 'date', value: from, 'aria-label': 'Custom range start' });
+  const toIn = h('input', { type: 'date', value: to, 'aria-label': 'Custom range end' });
+  const err = h('p', { class: 'field-error', role: 'alert' });
+  openPopover(anchor, h('div', null,
+    h('div', { class: 'menu', role: 'menu', 'aria-label': 'Date range' }, presets().map((p) => {
+      const selected = p.from === from && p.to === to;
+      return h('button', { class: 'menu-item', type: 'button', role: 'menuitemradio', 'aria-checked': String(selected), onclick: () => apply(p.from, p.to) },
+        h('span', { class: 'check' }, selected ? icon('check') : null), p.label, h('span', { class: 'hint' }, fmtRange(p.from, p.to)));
+    })),
+    h('div', { class: 'popover-foot' },
+      h('div', { class: 'foot-label' }, 'Custom range'),
+      h('div', { class: 'custom-range' }, fromIn, h('span', { 'aria-hidden': 'true' }, '–'), toIn),
+      h('button', {
+        class: 'btn sm primary', type: 'button',
+        onclick: () => {
+          const f = fromIn.value;
+          const t = toIn.value;
+          if (!isDate(f) || !isDate(t)) err.textContent = 'Pick both dates.';
+          else if (f > t) err.textContent = 'The start date must be on or before the end date.';
+          else if (daysIn(f, t) > 366) err.textContent = 'Pick a range of one year or less.';
+          else apply(f, t);
+        },
+      }, 'Apply'),
+      err)));
+}
+
+function approvalNotice(cards, onShow) {
+  const waiting = cards.filter((c) => c.approved !== true).length;
+  if (!waiting) return h('p', { class: 'status-line' }, statusIcon('good'), `All ${plural(cards.length, 'time card')} in this range are approved in Raken.`);
+  return notice('warn',
+    h('strong', null, `${plural(waiting, 'time card')} not approved in Raken yet. `),
+    onShow
+      ? 'They are included in the totals. When they are approved in Raken, the next sync picks that up.'
+      : 'They are included in the totals and marked with a small circle below.',
+    onShow ? h('button', { class: 'btn-link notice-action', type: 'button', onclick: onShow }, 'Show them') : null);
+}
+
+function notConnectedEmpty() {
+  return emptyState({
+    iconName: 'plug',
+    title: 'Raken isn’t connected yet',
+    text: 'Hours show up here once Raken is connected and the first import has run. An admin connects Raken once; it takes a few minutes.',
+    action: S.role === 'admin' ? h('a', { class: 'btn primary', href: '#/sync' }, icon('link'), 'Connect Raken') : h('p', null, 'Ask an admin to connect Raken.'),
+  });
+}
+
+function emptyRange(from, to, path, q) {
+  const last = LAST_WEEK();
+  let text = 'There are no time cards in Raken for these dates.';
+  if (to < DATA_START) text = `Time cards are imported from ${fmtDate(DATA_START, { year: true })} on.${S.role === 'admin' ? ' To see earlier dates, re-import them on the Raken sync page.' : ''}`;
+  else if (from > TODAY) text = 'These dates are in the future.';
+  return emptyState({
+    iconName: 'calendar',
+    title: `No hours for ${fmtRange(from, to)}`,
+    text,
+    action: h('a', { class: 'btn', href: href(path, { ...Object.fromEntries(q), from: last.from, to: last.to }) }, 'Go to last week'),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Page: Hours report
+// ---------------------------------------------------------------------------
+
+function pageHours(r) {
+  document.title = 'Hours · CRC Associates';
+  const { from, to } = currentRange(r.q);
+  const group = r.q.get('group') === 'project' ? 'project' : 'employee';
+  const connected = S.scenario !== 'disconnected';
+  const rows = connected ? dailyRows(from, to) : [];
+  const page = h('div', { class: 'page' }, syncNotices());
+  page.append(h('div', { class: 'page-head' },
+    h('div', null,
+      h('h1', null, 'Hours'),
+      h('p', { class: 'sub' }, 'Regular and OT hours per employee and project, calculated from Raken time cards.')),
+    connected ? h('button', { class: 'btn primary', type: 'button', disabled: rows.length === 0, onclick: () => openExport({ from, to }) }, icon('download'), 'Export to Excel') : null));
+  if (!connected) { page.append(notConnectedEmpty()); return page; }
+  page.append(h('div', { class: 'toolbar' }, rangeControl('/hours', r.q, from, to)));
+  if (!rows.length) { page.append(emptyRange(from, to, '/hours', r.q)); return page; }
+  const cards = entriesIn(from, to);
+  page.append(
+    approvalNotice(cards, () => {
+      S.onlyUnapproved = true;
+      render();
+      document.getElementById('report').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }),
+    hoursTiles(rows, from, to),
+    reportCard(rows, group, from, to),
+    footnote(cards, from, to));
+  return page;
+}
+
+function hoursTiles(rows, from, to) {
+  const t = sumRows(rows);
+  const [pf, pt] = stepRange(from, to, -1);
+  const prevRows = dailyRows(pf, pt);
+  const pct = (x) => `${t.total ? ((x / t.total) * 100).toFixed(1) : '0.0'}% of hours`;
+  const people = new Set(rows.map((d) => d.employee_id)).size;
+  const projects = new Set(rows.map((d) => d.project_id)).size;
+  let delta = 'No hours in the previous period';
+  if (prevRows.length) {
+    const diff = t.total - sumRows(prevRows).total;
+    delta = Math.abs(diff) < 0.005
+      ? `Same as ${fmtRange(pf, pt)}`
+      : h('span', { class: 'delta' }, icon(diff > 0 ? 'arrowUp' : 'arrowDown'), h('span', { class: 'sr-only' }, diff > 0 ? 'Up ' : 'Down '), `${fh(Math.abs(diff))} vs ${fmtRange(pf, pt)}`);
+  }
+  return h('div', { class: 'tiles' },
+    tile({ label: 'Total hours', value: fh(t.total), lines: [delta] }),
+    tile({ label: 'Regular', swatch: 'reg', value: fh(t.reg), lines: [pct(t.reg)] }),
+    tile({ label: 'OT', swatch: 'ot', value: fh(t.ot), lines: [pct(t.ot), `Weekday ${fh(t.weekdayOt)} · Weekend ${fh(t.weekendOt)}`] }),
+    tile({ label: 'Employees', value: nf0.format(people), lines: ['with hours in this range'] }),
+    tile({ label: 'Projects', value: nf0.format(projects), lines: ['with hours in this range'] }));
+}
+
+function reportCard(rows, group, from, to) {
+  const tree = buildTree(rows, group);
+  const [one, many] = group === 'employee' ? ['employee', 'employees'] : ['project', 'projects'];
+  const host = h('div', { class: 'table-wrap' });
+  const count = h('span', { class: 'count', 'aria-live': 'polite' });
+  const keyOf = (n) => group + ':' + n.id;
+  const expandBtn = h('button', {
+    class: 'btn sm ghost', type: 'button',
+    onclick: () => {
+      const allOpen = tree.every((n) => S.expanded.has(keyOf(n)));
+      for (const n of tree) { if (allOpen) S.expanded.delete(keyOf(n)); else S.expanded.add(keyOf(n)); }
+      redraw();
+    },
+  });
+  const chip = (label, key) => {
+    const b = h('button', {
+      class: 'chip', type: 'button', 'aria-pressed': String(S[key]),
+      onclick: () => { S[key] = !S[key]; b.setAttribute('aria-pressed', String(S[key])); redraw(); },
+    }, h('span', { class: 'chip-check' }, icon('check')), label);
+    return b;
+  };
+  function redraw() {
+    const { table, shown } = reportTable(tree, group, from, to, redraw);
+    host.replaceChildren(table);
+    count.textContent = shown === tree.length ? plural(tree.length, one, many) : `${shown} of ${plural(tree.length, one, many)}`;
+    expandBtn.textContent = tree.every((n) => S.expanded.has(keyOf(n))) ? 'Collapse all' : 'Expand all';
+  }
+  const card = h('section', { class: 'card', id: 'report', 'aria-label': `Hours by ${one}` },
+    h('div', { class: 'card-head' },
+      segmented([['employee', 'By employee'], ['project', 'By project']], group, (value) => { S.search = ''; go('/hours', { from, to, group: value }); }, 'Group rows by'),
+      count,
+      h('div', { class: 'spacer' }),
+      h('label', { class: 'search' }, icon('search'), h('span', { class: 'sr-only' }, 'Search'),
+        h('input', {
+          type: 'search', value: S.search,
+          placeholder: group === 'employee' ? 'Search employees or projects' : 'Search projects or employees',
+          oninput: (e) => { S.search = e.target.value; redraw(); },
+        })),
+      chip('Has OT', 'onlyOT'),
+      chip('Not approved', 'onlyUnapproved'),
+      expandBtn),
+    host);
+  redraw();
+  return card;
+}
+
+function reportTable(tree, group, from, to, redraw) {
+  const [heading, many] = group === 'employee' ? ['Employee', 'employees'] : ['Project', 'projects'];
+  const term = S.search.trim().toLowerCase();
+  const matches = (n) => n.name.toLowerCase().includes(term) || (n.sub || '').toLowerCase().includes(term);
+  const keep = (n) => (!S.onlyOT || n.ot > 0) && (!S.onlyUnapproved || n.unapproved > 0);
+  const list = [];
+  for (const p of tree) {
+    if (!keep(p)) continue;
+    let kids = p.children.filter(keep);
+    let forced = S.onlyUnapproved;
+    if (term && !matches(p)) {
+      kids = kids.filter(matches);
+      if (!kids.length) continue;
+      forced = true;
+    }
+    list.push({ p, kids, forced });
+  }
+  const order = new Map(sortNodes(list.map((x) => x.p), S.sort).map((p, i) => [p, i]));
+  list.sort((a, b) => order.get(a.p) - order.get(b.p));
+  const max = Math.max(1, ...tree.map((n) => n.total));
+  const range = { from, to };
+
+  const sortTh = (key, label, cls) => {
+    const active = S.sort.key === key;
+    return h('th', { scope: 'col', class: cls, 'aria-sort': active ? (S.sort.dir === 'asc' ? 'ascending' : 'descending') : null },
+      h('button', {
+        class: 'sort-btn', type: 'button',
+        onclick: () => {
+          S.sort = active ? { key, dir: S.sort.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'name' ? 'asc' : 'desc' };
+          redraw();
+        },
+      }, label, h('span', { class: 'sort-ic' + (active ? ' on' : '') }, icon(active && S.sort.dir === 'asc' ? 'arrowUp' : 'arrowDown'))));
+  };
+
+  const thead = h('thead', null, h('tr', null,
+    h('th', { scope: 'col', class: 'col-exp' }, h('span', { class: 'sr-only' }, 'Show breakdown')),
+    sortTh('name', heading, 'col-name'),
+    h('th', { scope: 'col', class: 'num col-count' }, group === 'employee' ? 'Projects' : 'People'),
+    sortTh('days', 'Days', 'num col-days'),
+    sortTh('reg', 'Regular', 'num'),
+    sortTh('ot', 'OT', 'num'),
+    sortTh('total', 'Total', 'num'),
+    h('th', { scope: 'col', class: 'col-bar' }, h('span', { class: 'legend-inline' }, h('span', { class: 'sw reg' }), 'Regular', h('span', { class: 'sw ot' }), 'OT')),
+    h('th', { scope: 'col', class: 'col-flag' }, 'Not approved')));
+
+  const tbody = h('tbody');
+  for (const { p, kids, forced } of list) {
+    const open = forced || S.expanded.has(group + ':' + p.id);
+    tbody.append(nodeRow(p, true, { open, group, max, range, redraw }));
+    if (open) for (const c of sortNodes(kids, S.sort)) tbody.append(nodeRow(c, false, { max, range }));
+  }
+  if (!list.length) tbody.append(h('tr', null, h('td', { colspan: '9', class: 'no-match' }, `No ${many} match these filters.`)));
+
+  const tot = list.reduce((a, { p }) => ({ reg: a.reg + p.reg, ot: a.ot + p.ot, total: a.total + p.total }), { reg: 0, ot: 0, total: 0 });
+  const tfoot = h('tfoot', null, h('tr', null,
+    h('td', { class: 'col-exp' }),
+    h('th', { scope: 'row', class: 'col-name' }, list.length === tree.length ? 'Total' : `Total of the ${list.length} shown`),
+    h('td', { class: 'col-count' }),
+    h('td', { class: 'col-days' }),
+    h('td', { class: 'num' }, fh(tot.reg)),
+    h('td', { class: 'num' }, fh(tot.ot)),
+    h('td', { class: 'num' }, fh(tot.total)),
+    h('td', { class: 'col-bar' }),
+    h('td', { class: 'col-flag' })));
+
+  const table = h('table', { class: 'data' },
+    h('caption', { class: 'sr-only' }, `Regular and OT hours by ${heading.toLowerCase()}, ${fmtRange(from, to)}`),
+    thead, tbody, tfoot);
+  return { table, shown: list.length };
+}
+
+function nodeRow(n, isParent, { open, group, max, range, redraw }) {
+  let toggle = h('td', { class: 'col-exp' });
+  if (isParent) {
+    const key = group + ':' + n.id;
+    toggle = h('td', { class: 'col-exp' }, h('button', {
+      class: 'icon-btn sm', type: 'button', 'aria-expanded': String(open),
+      'aria-label': `${open ? 'Hide' : 'Show'} ${n.kind === 'employee' ? 'projects for' : 'employees on'} ${n.name}`,
+      onclick: () => { if (S.expanded.has(key)) S.expanded.delete(key); else S.expanded.add(key); redraw(); },
+    }, icon(open ? 'chevronDown' : 'chevronRight')));
+  }
+  return h('tr', { class: isParent ? 'row-parent' : 'row-child' },
+    toggle,
+    h('th', { scope: 'row', class: 'col-name' },
+      h('a', { class: 'name-link', href: href(`/hours/${n.kind}/${n.id}`, range) }, n.name),
+      n.sub ? h('span', { class: 'code' }, n.sub) : null,
+      n.inactive ? h('span', { class: 'badge' }, 'Inactive') : null),
+    h('td', { class: 'num col-count' }, isParent ? String(n.children.length) : ''),
+    h('td', { class: 'num col-days' }, String(n.dates.size)),
+    h('td', { class: 'num' }, fh(n.reg)),
+    h('td', { class: 'num' + (n.ot > 0 ? ' strong' : ' zero') }, fh(n.ot)),
+    h('td', { class: 'num' + (isParent ? ' strong' : '') }, fh(n.total)),
+    h('td', { class: 'col-bar' }, miniBar(n.reg, n.ot, max)),
+    h('td', { class: 'col-flag' }, n.unapproved ? h('span', { class: 'flag' }, statusIcon('warn'), plural(n.unapproved, 'card')) : null));
+}
+
+function rulesUsed(from, to) {
+  const used = new Set();
+  for (const d of eachDay(from, to)) used.add(ruleFor(d));
+  return [...used];
+}
+
+function footnote(cards, from, to) {
+  const { threshold, weekendDays } = ruleParams(to);
+  const st = syncState();
+  return h('p', { class: 'footnote' }, icon('info'), h('span', null,
+    `OT is worked out per employee, project and day: on weekdays, hours over ${fh(threshold)} on one project; on ${weekendNames(weekendDays)}, all hours. Hours on different projects are never added together. `,
+    rulesUsed(from, to).length > 1 ? 'The OT rules changed during this range; each day uses the rule in effect that day. ' : '',
+    h('a', { href: '#/settings/ot-rules' }, 'How OT is calculated'),
+    ` · Calculated from ${plural(cards.length, 'time card')}`,
+    st.lastOk ? ` · Raken data as of ${fmtWhen(st.lastOk.finished_at)}` : ''));
+}
+
+// ---------------------------------------------------------------------------
+// Page: one employee (timesheet) or one project
+// ---------------------------------------------------------------------------
+
+function pageEntity(r, kind, id) {
+  const ent = kind === 'employee' ? EMP.get(id) : PROJ.get(id);
+  const { from, to } = currentRange(r.q);
+  const back = href('/hours', { from, to, group: kind });
+  const page = h('div', { class: 'page' }, syncNotices());
+  if (!ent) {
+    document.title = 'Not found · CRC Associates';
+    page.append(h('nav', { class: 'crumbs', 'aria-label': 'Breadcrumb' }, h('a', { href: back }, 'Hours')),
+      emptyState({ title: 'Not found', text: `This ${kind} is not in the data.`, action: h('a', { class: 'btn', href: back }, 'Back to Hours') }));
+    return page;
+  }
+  document.title = `${ent.name} · CRC Associates`;
+  const filter = kind === 'employee' ? (c) => c.employee_id === id : (c) => c.project_id === id;
+  const connected = S.scenario !== 'disconnected';
+  const rows = connected ? dailyRows(from, to, filter) : [];
+  const meta = kind === 'employee'
+    ? ['Employee', ent.code ? ` · ${ent.code}` : '', ent.active ? ' · Active in Raken' : ' · Inactive in Raken']
+    : ['Project', ent.number ? ` · ${ent.number}` : '', ent.status === 'ACTIVE' ? ' · Active in Raken' : ' · Inactive in Raken'];
+  page.append(
+    h('nav', { class: 'crumbs', 'aria-label': 'Breadcrumb' }, h('a', { href: back }, 'Hours'), h('span', { 'aria-hidden': 'true' }, '/'), h('span', { 'aria-current': 'page' }, ent.name)),
+    h('div', { class: 'page-head' },
+      h('div', null, h('h1', null, ent.name), h('p', { class: 'sub' }, meta)),
+      rows.length > 0 ? h('button', { class: 'btn', type: 'button', onclick: () => openExport({ from, to, kind, id }) }, icon('download'), kind === 'employee' ? 'Export timesheet' : 'Export project hours') : null));
+  if (!connected) { page.append(notConnectedEmpty()); return page; }
+  page.append(h('div', { class: 'toolbar' }, rangeControl(`/hours/${kind}/${id}`, r.q, from, to)));
+  if (!rows.length) { page.append(emptyRange(from, to, `/hours/${kind}/${id}`, r.q)); return page; }
+  page.append(approvalNotice(entriesIn(from, to, filter), null), entityTiles(rows, kind), matrixLegend());
+  for (let ws = weekStart(from); ws <= to; ws = addDays(ws, 7)) page.append(weekCard(ws, rows, kind, from, to));
+  return page;
+}
+
+function entityTiles(rows, kind) {
+  const t = sumRows(rows);
+  const days = new Set(rows.map((d) => d.work_date)).size;
+  const others = new Set(rows.map((d) => (kind === 'employee' ? d.project_id : d.employee_id))).size;
+  return h('div', { class: 'tiles' },
+    tile({ label: 'Regular', swatch: 'reg', value: fh(t.reg) }),
+    tile({ label: 'OT', swatch: 'ot', value: fh(t.ot), lines: [`Weekday ${fh(t.weekdayOt)} · Weekend ${fh(t.weekendOt)}`] }),
+    tile({ label: 'Total hours', value: fh(t.total) }),
+    tile({ label: kind === 'employee' ? 'Days worked' : 'Days with hours', value: String(days) }),
+    tile({ label: kind === 'employee' ? 'Projects' : 'Employees', value: String(others) }));
+}
+
+function matrixLegend() {
+  return h('div', { class: 'legend' },
+    h('span', { class: 'legend-item' }, h('span', { class: 'lg-cell ot' }, h('span', { class: 'sw ot' })), 'Day with OT on that project'),
+    h('span', { class: 'legend-item' }, h('span', { class: 'lg-cell wknd' }), 'Weekend: all hours are OT'),
+    h('span', { class: 'legend-item' }, icon('ring', 'ring-ic'), 'Not approved in Raken yet'),
+    h('span', { class: 'legend-item hint' }, 'Select a day to see its time cards and how it was calculated.'));
+}
+
+function weekCard(ws, rows, kind, from, to) {
+  const we = addDays(ws, 6);
+  const days = eachDay(ws, we);
+  const inRange = (d) => d >= from && d <= to;
+  const weekRows = rows.filter((d) => d.work_date >= ws && d.work_date <= we);
+  const card = h('section', { class: 'card week', 'aria-label': `Week of ${fmtDate(ws, { year: true })}` },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, `Week of ${fmtDate(ws, { dow: true })}`), h('span', { class: 'count' }, fmtRange(ws, we))));
+  if (!weekRows.length) { card.append(h('p', { class: 'card-empty' }, 'No hours this week.')); return card; }
+
+  // Rows: projects on an employee's timesheet, employees on a project.
+  const dim = kind === 'employee' ? 'project_id' : 'employee_id';
+  const rowKind = kind === 'employee' ? 'project' : 'employee';
+  const groups = new Map();
+  for (const d of weekRows) {
+    let g = groups.get(d[dim]);
+    if (!g) {
+      g = { id: d[dim], ent: rowKind === 'project' ? PROJ.get(d[dim]) : EMP.get(d[dim]), cells: new Map(), reg: 0, ot: 0, total: 0 };
+      groups.set(d[dim], g);
+    }
+    g.cells.set(d.work_date, d);
+    g.reg += d.regular;
+    g.ot += d.ot;
+    g.total += d.total;
+  }
+  const list = [...groups.values()].sort((a, b) => b.total - a.total || a.ent.name.localeCompare(b.ent.name));
+
+  const thead = h('thead', null, h('tr', null,
+    h('th', { scope: 'col', class: 'rowhead' }, rowKind === 'project' ? 'Project' : 'Employee'),
+    days.map((d) => h('th', { scope: 'col', class: 'dayhead' + (isWeekend(d) ? ' wknd' : '') + (inRange(d) ? '' : ' out') + (d === TODAY ? ' today' : '') },
+      h('span', { class: 'dow' }, DOW[isoDow(d) - 1]), h('span', { class: 'd' }, String(toD(d).getUTCDate())))),
+    h('th', { scope: 'col', class: 'sumhead first' }, h('span', { class: 'sw reg' }), 'Regular'),
+    h('th', { scope: 'col', class: 'sumhead' }, h('span', { class: 'sw ot' }), 'OT'),
+    h('th', { scope: 'col', class: 'sumhead' }, 'Total')));
+
+  const tbody = h('tbody', null, list.map((g) => h('tr', null,
+    h('th', { scope: 'row', class: 'rowhead' },
+      h('a', { class: 'name-link', href: href(`/hours/${rowKind}/${g.id}`, { from, to }) }, g.ent.name),
+      h('span', { class: 'code' }, (rowKind === 'project' ? g.ent.number : g.ent.code) || '')),
+    days.map((d) => matrixCell(g.cells.get(d), d, inRange(d))),
+    h('td', { class: 'sum first' }, fh(g.reg)),
+    h('td', { class: 'sum' + (g.ot > 0 ? ' strong' : ' zero') }, fh(g.ot)),
+    h('td', { class: 'sum strong' }, fh(g.total)))));
+
+  const week = sumRows(weekRows);
+  const tfoot = h('tfoot', null, h('tr', null,
+    h('th', { scope: 'row', class: 'rowhead' },
+      kind === 'employee' ? 'Day total ' : 'Day total, all employees ',
+      kind === 'employee' ? infoTip('Shown for reference only. OT is decided per project: hours on different projects are never added together.') : null),
+    days.map((d) => dayTotalCell(d, weekRows.filter((x) => x.work_date === d), kind, inRange(d))),
+    h('td', { class: 'sum first' }, fh(week.reg)),
+    h('td', { class: 'sum' + (week.ot > 0 ? '' : ' zero') }, fh(week.ot)),
+    h('td', { class: 'sum' }, fh(week.total))));
+
+  card.append(h('div', { class: 'matrix-wrap' }, h('table', { class: 'matrix' },
+    h('caption', { class: 'sr-only' }, `Hours per day, ${fmtRange(ws, we)}`), thead, tbody, tfoot)));
+  return card;
+}
+
+function matrixCell(d, date, inRange) {
+  const cls = 'cell' + (isWeekend(date) ? ' wknd' : '') + (inRange ? '' : ' out');
+  if (!d) return h('td', { class: cls }, h('span', { class: 'cell-empty', 'aria-hidden': 'true' }, '·'), h('span', { class: 'sr-only' }, 'No hours'));
+  const label = `${fmtDate(date, { dow: true })}: ${fh(d.total)} hours, ${fh(d.regular)} Regular, ${fh(d.ot)} OT${d.all_approved ? '' : ', not approved in Raken yet'}. Show details.`;
+  return h('td', { class: cls }, h('button', { class: 'cell-btn' + (d.ot > 0 ? ' has-ot' : ''), type: 'button', 'aria-label': label, onclick: () => openDayDrawer(d) },
+    h('span', { class: 'cell-total' }, fh(d.total)),
+    d.ot > 0 ? h('span', { class: 'cell-ot' }, h('span', { class: 'sw ot' }), `${fh(d.ot)} OT`) : null,
+    d.all_approved ? null : h('span', { class: 'cell-flag' }, icon('ring', 'ring-ic'))));
+}
+
+function dayTotalCell(date, dayRows, kind, inRange) {
+  const cls = 'cell' + (isWeekend(date) ? ' wknd' : '') + (inRange ? '' : ' out');
+  if (!dayRows.length) return h('td', { class: cls }, h('span', { class: 'cell-empty', 'aria-hidden': 'true' }, '·'));
+  const total = dayRows.reduce((a, x) => a + x.total, 0);
+  const ot = dayRows.reduce((a, x) => a + x.ot, 0);
+  const { threshold } = ruleParams(date);
+  let note = null;
+  // Explain the per-project rule where a combined total would look like OT.
+  if (kind === 'employee' && !isWeekend(date) && dayRows.length > 1 && total > threshold) {
+    const over = dayRows.filter((x) => x.ot > 0).map((x) => PROJ.get(x.project_id).name);
+    note = infoTip(over.length
+      ? `${fh(total)} h across ${dayRows.length} projects. Only ${listJoin(over)} went over ${fh(threshold)} h, so ${fh(ot)} h is OT. Hours on different projects are never added together.`
+      : `${fh(total)} h across ${dayRows.length} projects, but no single project went over ${fh(threshold)} h, so there is no OT. Hours on different projects are never added together.`);
+  }
+  return h('td', { class: cls }, h('div', { class: 'cell-static' },
+    h('span', { class: 'cell-total' }, fh(total), note),
+    ot > 0 ? h('span', { class: 'cell-ot' }, h('span', { class: 'sw ot' }), `${fh(ot)} OT`) : null));
+}
+
+function openDayDrawer(d) {
+  const emp = EMP.get(d.employee_id);
+  const proj = PROJ.get(d.project_id);
+  const { rule, threshold, weekendDays } = ruleParams(d.work_date);
+  const sameDay = dailyRows(d.work_date, d.work_date, (c) => c.employee_id === d.employee_id);
+  const others = sameDay.filter((x) => x.project_id !== d.project_id);
+  const dayTotal = sameDay.reduce((a, x) => a + x.total, 0);
+  const dayName = DOW_LONG[isoDow(d.work_date) - 1];
+  let why;
+  if (d.is_weekend) why = `${dayName} is a weekend day, so all ${fh(d.total)} h are OT.`;
+  else if (d.total <= threshold) why = `A weekday with ${fh(d.total)} h on this project. That is not over ${fh(threshold)} h, so it is all Regular.`;
+  else why = `A weekday with ${fh(d.total)} h on this project. The first ${fh(threshold)} h are Regular and the other ${fh(d.ot)} h are OT.`;
+  const since = !rule || rule.effective_from === RULES_START ? 'in effect from the start' : `in effect since ${fmtDate(rule.effective_from, { year: true })}`;
+
+  openDrawer({
+    title: fmtDate(d.work_date, { dow: true, year: true }),
+    subtitle: `${emp.name} · ${proj.name}${proj.number ? ` (${proj.number})` : ''}`,
+    body: [
+      h('div', { class: 'calc' },
+        h('div', { class: 'calc-total' }, fh(d.total), h('span', null, ' hours')),
+        h('div', { class: 'calc-split' },
+          h('span', null, h('span', { class: 'sw reg' }), `${fh(d.regular)} Regular`),
+          h('span', null, h('span', { class: 'sw ot' }), `${fh(d.ot)} OT`)),
+        miniBar(d.regular, d.ot, d.total, 380, true)),
+      h('h3', null, 'How it was calculated'),
+      h('p', null, why),
+      h('p', { class: 'muted' }, `Rule ${since}: on weekdays, hours over ${fh(threshold)} on one project are OT; on ${weekendNames(weekendDays)}, all hours are OT.`),
+      h('h3', null, 'Other projects that day'),
+      others.length
+        ? [h('ul', { class: 'plain-list' }, others.map((o) => h('li', null,
+            h('span', null, PROJ.get(o.project_id).name),
+            h('span', { class: 'num' }, `${fh(o.total)} h${o.ot > 0 ? ` (${fh(o.ot)} OT)` : ''}`)))),
+          h('p', { class: 'muted small', style: { marginTop: '8px' } }, `Day total ${fh(dayTotal)} h. Projects are not added together for OT.`)]
+        : h('p', { class: 'muted' }, 'None.'),
+      h('h3', null, `Time cards from Raken (${d.cards.length})`),
+      h('ul', { class: 'cards-list' }, d.cards.map((c) => h('li', null,
+        h('div', { class: 'card-line' },
+          h('strong', null, `${fh(c.hours)} h`),
+          h('span', { class: 'status' }, statusIcon(c.approved ? 'good' : 'warn'), c.approved ? 'Approved' : 'Not approved')),
+        h('div', { class: 'muted small' }, `Last changed in Raken ${fmtWhen(c.raken_updated_at)} · Card ${c.raken_id.slice(0, 8)}`)))),
+      h('div', { class: 'readonly-note' }, icon('shield'),
+        h('p', null, 'This app only reads from Raken. To fix hours or approve a time card, do it in Raken. The change shows up here after the next sync, within the hour.')),
+    ],
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Excel export (preview of the file's layout)
+// ---------------------------------------------------------------------------
+
+function openExport({ from, to, kind, id }) {
+  const filter = kind === 'employee' ? (c) => c.employee_id === id : kind === 'project' ? (c) => c.project_id === id : null;
+  const rows = dailyRows(from, to, filter);
+  const cards = entriesIn(from, to, filter);
+  const waiting = cards.filter((c) => c.approved !== true).length;
+  const tree = sortNodes(buildTree(rows, 'employee'), { key: 'name', dir: 'asc' });
+  const scope = kind ? (kind === 'employee' ? EMP.get(id).name : PROJ.get(id).name) : null;
+  const fileName = `CRC Hours ${scope ? scope + ' ' : ''}${from} to ${to}.xlsx`;
+  const t = sumRows(rows);
+  const { threshold, weekendDays } = ruleParams(to);
+  const st = syncState();
+
+  // Summary sheet: employee -> project, with subtotals and a grand total.
+  const summaryRows = [];
+  for (const emp of tree.slice(0, 2)) {
+    sortNodes(emp.children, { key: 'name', dir: 'asc' }).forEach((p, i) => summaryRows.push(h('tr', null,
+      h('td', null, i === 0 ? emp.name : ''), h('td', null, i === 0 ? emp.sub : ''), h('td', null, p.name), h('td', null, p.sub || ''),
+      h('td', { class: 'num' }, fh(p.reg)), h('td', { class: 'num' }, fh(p.ot)), h('td', { class: 'num' }, fh(p.total)))));
+    summaryRows.push(h('tr', { class: 'sub' }, h('td', { colspan: '4' }, `${emp.name} total`),
+      h('td', { class: 'num' }, fh(emp.reg)), h('td', { class: 'num' }, fh(emp.ot)), h('td', { class: 'num' }, fh(emp.total))));
+  }
+  if (tree.length > 2) summaryRows.push(h('tr', null, h('td', { colspan: '7', class: 'ell' }, `… ${plural(tree.length - 2, 'more employee')}`)));
+  summaryRows.push(h('tr', { class: 'grand' }, h('td', { colspan: '4' }, 'Grand total'),
+    h('td', { class: 'num' }, fh(t.reg)), h('td', { class: 'num' }, fh(t.ot)), h('td', { class: 'num' }, fh(t.total))));
+  const summarySheet = h('table', { class: 'sheet' },
+    h('thead', null, h('tr', null, th('Employee'), th('Code'), th('Project'), th('Project #'), th('Regular', 'num'), th('OT', 'num'), th('Total', 'num'))),
+    h('tbody', null, summaryRows));
+
+  // Daily sheet: one row per employee, project and day.
+  const daily = [...rows].sort((a, b) => EMP.get(a.employee_id).name.localeCompare(EMP.get(b.employee_id).name)
+    || a.work_date.localeCompare(b.work_date) || PROJ.get(a.project_id).name.localeCompare(PROJ.get(b.project_id).name));
+  const dailySheet = h('table', { class: 'sheet' },
+    h('thead', null, h('tr', null, th('Date'), th('Day'), th('Employee'), th('Project'), th('Regular', 'num'), th('OT', 'num'), th('Total', 'num'), th('Approved'))),
+    h('tbody', null,
+      daily.slice(0, 7).map((d) => h('tr', null,
+        h('td', null, d.work_date), h('td', null, DOW[isoDow(d.work_date) - 1]), h('td', null, EMP.get(d.employee_id).name), h('td', null, PROJ.get(d.project_id).name),
+        h('td', { class: 'num' }, fh(d.regular)), h('td', { class: 'num' }, fh(d.ot)), h('td', { class: 'num' }, fh(d.total)), h('td', null, d.all_approved ? 'Yes' : 'No'))),
+      daily.length > 7 ? h('tr', null, h('td', { colspan: '8', class: 'ell' }, `… ${plural(daily.length - 7, 'more row')}`)) : null));
+
+  const sheetHost = h('div', { class: 'table-wrap' }, summarySheet);
+  const sheetTab = (label, sheet) => h('button', {
+    type: 'button', class: 'sheet-tab' + (sheet === summarySheet ? ' on' : ''), 'aria-pressed': String(sheet === summarySheet),
+    onclick: (e) => {
+      sheetHost.replaceChildren(sheet);
+      for (const b of e.currentTarget.parentElement.children) { b.classList.toggle('on', b === e.currentTarget); b.setAttribute('aria-pressed', String(b === e.currentTarget)); }
+    },
+  }, label);
+
+  openDialog({
+    title: 'Export to Excel',
+    width: '680px',
+    body: [
+      h('p', null, h('strong', null, fmtRange(from, to)), scope ? ` · ${scope}` : '', ` · ${plural(tree.length, 'employee')} · ${plural(new Set(rows.map((d) => d.project_id)).size, 'project')}`),
+      h('ul', { class: 'sheet-list' },
+        h('li', null, icon('sheet'), h('div', null, h('strong', null, 'Summary'), h('div', { class: 'muted small' }, 'One row per employee and project: Regular, OT and Total, with a subtotal for each employee and a grand total.'))),
+        h('li', null, icon('sheet'), h('div', null, h('strong', null, 'Daily'), h('div', { class: 'muted small' }, 'One row per employee, project and day: date, weekday, Regular, OT, Total, and whether Raken approved it.')))),
+      h('div', { class: 'sheet-preview', role: 'group', 'aria-label': 'Preview of the Excel file' },
+        h('div', { class: 'sheet-meta' },
+          h('strong', null, 'CRC Associates · Hours'), h('br'),
+          `${fmtRange(from, to)} · OT: weekdays over ${fh(threshold)} h on one project, all hours on ${weekendNames(weekendDays)}`, h('br'),
+          st.lastOk ? `Raken data as of ${fmtWhen(st.lastOk.finished_at)}` : ''),
+        sheetHost,
+        h('div', { class: 'sheet-tabs', role: 'group', 'aria-label': 'Sheets' }, sheetTab('Summary', summarySheet), sheetTab('Daily', dailySheet))),
+      waiting
+        ? h('div', { style: { marginTop: '12px' } }, notice('warn', `${plural(waiting, 'time card')} in this range are not approved in Raken yet. They are included, the same as on screen.`))
+        : null,
+      h('p', { class: 'muted small', style: { marginTop: '12px' } }, `File: ${fileName}`),
+    ],
+    actions: (api) => [
+      h('button', { class: 'btn', type: 'button', onclick: () => api.close() }, 'Cancel'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => { api.close(); toast(`Prototype: “${fileName}” would download now.`); } }, icon('download'), 'Download .xlsx'),
+    ],
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Page: Raken sync
+// ---------------------------------------------------------------------------
+
+function pageSync() {
+  document.title = 'Raken sync · CRC Associates';
+  const page = h('div', { class: 'page' },
+    h('div', { class: 'page-head' }, h('div', null,
+      h('h1', null, 'Raken sync'),
+      h('p', { class: 'sub' }, 'Copies employees, projects and time cards from Raken into this app, where the hours are calculated.'))),
+    h('div', { class: 'readonly-banner' }, icon('shield'),
+      h('p', null, h('strong', null, 'Read-only. '), 'This app only reads from Raken. It never creates, changes or deletes anything in Raken.')));
+  if (S.scenario === 'disconnected') { page.append(connectCard()); return page; }
+  page.append(h('div', { class: 'grid-2' }, connectionCard(), dataCard()), scheduleCard(), historyCard());
+  return page;
+}
+
+function connectCard() {
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Connect Raken'), h('span', { class: 'status count' }, statusIcon('off'), 'Not connected')),
+    h('div', { class: 'card-body' },
+      h('p', null, 'This app needs a one-time approval from a Raken user to read your company’s data.'),
+      h('ol', { class: 'steps' },
+        h('li', null, h('strong', null, 'Create an approval link'), ' here. The link works for 15 minutes.'),
+        h('li', null, h('strong', null, 'Open it and sign in to Raken'), ' as an Account Administrator, then approve. An administrator is recommended because the sync only sees what that user can see.'),
+        h('li', null, h('strong', null, 'Run the first import'), ' to copy past time cards. After that, the sync runs every hour by itself.')),
+      h('p', { class: 'muted small' }, 'Raken’s approval screen has no read-only option. This app enforces read-only itself: it only ever reads.'),
+      S.role === 'admin'
+        ? h('div', { class: 'card-actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => openConnectDialog(false) }, icon('link'), 'Create approval link'))
+        : h('p', { style: { marginTop: '12px' } }, 'Only an admin can connect Raken.')));
+}
+
+function connectionCard() {
+  const failed = S.scenario === 'failed';
+  const validUntil = addDays(CONNECTION.refreshed_at.slice(0, 10), 180);
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' },
+      h('h2', { class: 'card-title' }, 'Raken connection'),
+      h('span', { class: 'status count' }, statusIcon(failed ? 'crit' : 'good'), failed ? 'Needs reconnecting' : 'Connected')),
+    h('div', { class: 'card-body' },
+      failed ? h('div', { style: { marginBottom: '14px' } }, notice('crit', 'Raken turned down the saved sign-in. This happens when access is removed in Raken, or when the sync has not renewed it for 180 days. A Raken Account Administrator needs to approve access again.')) : null,
+      h('dl', { class: 'facts' },
+        fact('Connected as', CONNECTION.name, h('span', { class: 'muted' }, `· ${CONNECTION.email}`)),
+        fact('Raken role', CONNECTION.roleLabel),
+        fact('Connected on', fmtWhen(CONNECTION.connected_at)),
+        fact('Access renewed', failed ? [statusIcon('crit'), ` Failed ${fmtWhen('2026-09-26T12:48:05')}`] : fmtWhen(CONNECTION.refreshed_at)),
+        fact('Approval valid until', failed ? 'No longer valid' : [fmtDate(validUntil, { year: true }), h('span', { class: 'muted' }, '· extended every time access is renewed')])),
+      S.role === 'admin'
+        ? h('div', { class: 'card-actions' }, h('button', { class: 'btn' + (failed ? ' primary' : ''), type: 'button', onclick: () => openConnectDialog(true) }, icon('link'), 'Reconnect Raken'))
+        : null));
+}
+
+function dataCard() {
+  const live = ENTRIES.filter((c) => !c.deleted_at);
+  const dates = live.map((c) => c.work_date).sort();
+  const lastImport = allRuns().find((r) => r.mode === 'range' && r.status === 'success');
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Data in this app')),
+    h('div', { class: 'card-body' }, h('dl', { class: 'facts' },
+      fact('Employees', String(EMPLOYEES.length), h('span', { class: 'muted' }, `(${EMPLOYEES.filter((e) => e.active).length} active)`)),
+      fact('Projects', String(PROJECTS.length), h('span', { class: 'muted' }, `(${PROJECTS.filter((p) => p.status === 'ACTIVE').length} active)`)),
+      fact('Time cards', nf0.format(live.length), h('span', { class: 'muted' }, `· ${plural(ENTRIES.length - live.length, 'deleted card')} not counted`)),
+      fact('Work dates', fmtRange(dates[0], dates[dates.length - 1])),
+      fact('Last full import', lastImport ? [fmtWhen(lastImport.started_at), h('span', { class: 'muted' }, `· ${fmtRange(lastImport.params.from, lastImport.params.to)}`)] : 'None yet'))));
+}
+
+function scheduleCard() {
+  const runs = allRuns();
+  const last = runs[0];
+  const busy = !!S.running;
+  // While sign-in is failing, Reconnect Raken is the main action, not Sync now.
+  const syncClass = S.scenario === 'failed' ? 'btn' : 'btn primary';
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Automatic sync')),
+    h('div', { class: 'card-body sync-body' },
+      h('dl', { class: 'facts' },
+        fact('Schedule', 'Every hour, at about 48 minutes past'),
+        fact('Last run', busy ? [icon('spinner', 'spin'), ' Running now…'] : last ? [fmtWhen(last.started_at), ' · ', runResult(last)] : 'None yet'),
+        fact('Next run', 'About 2:48 PM')),
+      S.role === 'admin'
+        ? h('div', { class: 'sync-actions' },
+          h('div', { class: 'action' },
+            h('button', { class: syncClass, type: 'button', disabled: busy, onclick: syncNow }, busy ? icon('spinner', 'spin') : icon('refresh'), busy ? 'Syncing…' : 'Sync now'),
+            h('p', null, 'Picks up changes made in Raken since the last run.')),
+          h('div', { class: 'action' },
+            h('button', { class: 'btn', type: 'button', disabled: busy, onclick: openReimportDialog }, icon('calendar'), 'Re-import dates…'),
+            h('p', null, 'Reads every time card for chosen dates again. Use it for the first import, or if something looks missing.')))
+        : h('p', { class: 'muted' }, 'Only admins can start a sync.')));
+}
+
+function runType(run) {
+  if (run.mode === 'range') return `Import ${fmtRange(run.params.from, run.params.to)}`;
+  return run.params && run.params.force ? 'Manual' : 'Automatic';
+}
+
+function runResult(run) {
+  if (run.status === 'running') return h('span', { class: 'status' }, icon('spinner', 'spin'), 'Running…');
+  if (run.status === 'error') return h('span', { class: 'status' }, statusIcon('crit'), 'Failed');
+  const s = run.summary || {};
+  if (s.skipped_count || (s.warnings && s.warnings.length)) return h('span', { class: 'status' }, statusIcon('warn'), 'Done, with warnings');
+  return h('span', { class: 'status' }, statusIcon('good'), 'Success');
+}
+
+function runDetails(run) {
+  const s = run.summary || emptySummary();
+  return h('div', { class: 'run-details' },
+    run.error ? h('p', null, h('strong', null, 'Error: '), run.error) : null,
+    run.status === 'error' ? h('p', { class: 'muted' }, 'Nothing was changed in Raken or in this app. Reconnect Raken to fix a sign-in error.') : null,
+    s.warnings.length > 0 ? h('div', null, h('strong', null, 'Warnings'), h('ul', null, s.warnings.map((w) => h('li', null, w)))) : null,
+    s.skipped_count > 0 ? h('div', null, h('strong', null, `Skipped time cards (${s.skipped_count})`),
+      h('ul', null, s.skipped.map((x) => h('li', null, x.reason, x.uuid ? h('span', { class: 'muted' }, ` · card ${x.uuid.slice(0, 8)}`) : null))),
+      h('p', { class: 'muted small' }, 'Skipped cards are left out of all hours. Fix them in Raken; the next sync picks them up.')) : null,
+    s.windows.length > 0 ? h('div', null, h('strong', null, run.mode === 'range' ? 'Date windows read' : 'Changes read (UTC)'), h('ul', { class: 'mono' }, s.windows.map((w) => h('li', null, w)))) : null,
+    run.status === 'success' && !s.skipped_count && !s.warnings.length && !s.windows.length ? h('p', { class: 'muted' }, 'No details.') : null);
+}
+
+function historyCard() {
+  const runs = allRuns();
+  const all = (S.running ? [S.running] : []).concat(runs);
+  const rowsFor = (run) => {
+    const key = 'run:' + run.id;
+    const s = run.summary;
+    const canOpen = run.status !== 'running';
+    const open = canOpen && S.expanded.has(key);
+    const row = h('tr', { class: 'row-parent' },
+      h('td', null, fmtWhen(run.started_at)),
+      h('td', null, runType(run)),
+      h('td', null, runResult(run)),
+      h('td', { class: 'num' }, run.finished_at ? duration(run.started_at, run.finished_at) : '—'),
+      h('td', { class: 'num' }, s ? nf0.format(s.time_cards_saved) : '—'),
+      h('td', { class: 'num' + (s && s.time_cards_deleted ? '' : ' zero') }, s ? nf0.format(s.time_cards_deleted) : '—'),
+      h('td', { class: 'num' + (s && s.skipped_count ? '' : ' zero') }, s ? nf0.format(s.skipped_count) : '—'),
+      h('td', { class: 'col-exp' }, canOpen ? h('button', {
+        class: 'icon-btn sm', type: 'button', 'aria-expanded': String(open),
+        'aria-label': `${open ? 'Hide' : 'Show'} details for the run at ${fmtWhen(run.started_at)}`,
+        onclick: () => { if (S.expanded.has(key)) S.expanded.delete(key); else S.expanded.add(key); render(); },
+      }, icon(open ? 'chevronDown' : 'chevronRight')) : null));
+    return open ? [row, h('tr', { class: 'row-detail' }, h('td', { colspan: '8' }, runDetails(run)))] : [row];
+  };
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Sync history'), h('span', { class: 'count' }, plural(runs.length, 'run'))),
+    h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
+      h('thead', null, h('tr', null, th('Started'), th('Type'), th('Result'), th('Took', 'num'), th('Cards saved', 'num'), th('Deleted', 'num'), th('Skipped', 'num'), h('th', { scope: 'col', class: 'col-exp' }, h('span', { class: 'sr-only' }, 'Details')))),
+      h('tbody', null, all.slice(0, S.runsShown).map(rowsFor)))),
+    all.length > S.runsShown ? h('div', { class: 'card-foot' }, h('button', { class: 'btn sm', type: 'button', onclick: () => { S.runsShown += 10; render(); } }, 'Show 10 more')) : null);
+}
+
+function syncNow() {
+  if (S.running) return;
+  const run = { id: nextRunId++, started_at: NOW, status: 'running', mode: 'incremental', params: { force: true }, summary: null };
+  S.running = run;
+  render();
+  setTimeout(() => {
+    if (S.running !== run) return;
+    S.running = null;
+    const failed = S.scenario === 'failed';
+    const summary = failed ? emptySummary() : { ...emptySummary(), employees: EMPLOYEES.length, projects: PROJECTS.length, time_cards_saved: 3, windows: [`${addSeconds(BASE_RUNS[0].started_at, -600)}Z..${NOW}Z`] };
+    S.extraRuns.unshift({ ...run, status: failed ? 'error' : 'success', finished_at: addSeconds(NOW, failed ? 2 : 9), summary, error: failed ? FAIL_MESSAGE : null });
+    render();
+    toast(failed ? 'Sync failed: Raken turned down the saved sign-in. Reconnect Raken.' : 'Sync finished: 3 time cards updated.');
+  }, 2200);
+}
+
+function startRangeRun(from, to) {
+  if (S.running) return;
+  const run = { id: nextRunId++, started_at: NOW, status: 'running', mode: 'range', params: { from, to }, summary: null };
+  S.running = run;
+  go('/sync');
+  setTimeout(() => {
+    if (S.running !== run) return;
+    S.running = null;
+    if (S.scenario === 'failed') {
+      S.extraRuns.unshift({ ...run, status: 'error', finished_at: addSeconds(NOW, 2), summary: emptySummary(), error: FAIL_MESSAGE });
+      render();
+      toast('Import failed: Raken turned down the saved sign-in. Reconnect Raken.');
+      return;
+    }
+    const read = ENTRIES.filter((c) => !c.deleted_at && c.work_date >= from && c.work_date <= to).length;
+    const windows = [];
+    for (let a = from; a <= to; a = addDays(a, 30)) { const b = addDays(a, 29) < to ? addDays(a, 29) : to; windows.push(`${a}..${b}`); }
+    S.extraRuns.unshift({ ...run, status: 'success', finished_at: addSeconds(NOW, 20 + windows.length * 25), summary: { ...emptySummary(), employees: EMPLOYEES.length, projects: PROJECTS.length, time_cards_saved: read, windows } });
+    render();
+    toast(`Import finished: ${plural(read, 'time card')} read for ${fmtRange(from, to)}.`);
+  }, 2600);
+}
+
+function openReimportDialog() {
+  const lastWeek = LAST_WEEK();
+  const fromIn = h('input', { type: 'date', value: lastWeek.from, max: TODAY });
+  const toIn = h('input', { type: 'date', value: lastWeek.to, max: TODAY });
+  const estimate = h('p', { class: 'field-hint', style: { marginTop: '8px' } });
+  const err = h('p', { class: 'field-error', role: 'alert' });
+  const update = () => {
+    const f = fromIn.value;
+    const t = toIn.value;
+    estimate.textContent = isDate(f) && isDate(t) && f <= t ? `${plural(daysIn(f, t), 'day')}. Takes about ${plural(Math.max(1, Math.ceil(daysIn(f, t) / 30)), 'minute')}.` : '';
+  };
+  fromIn.addEventListener('input', update);
+  toIn.addEventListener('input', update);
+  update();
+  openDialog({
+    title: 'Re-import time cards',
+    body: [
+      h('p', null, 'Reads every time card dated in this range from Raken again and updates this app. Cards that are no longer in Raken are marked as deleted here, so they stop counting. Nothing is changed in Raken.'),
+      h('div', { class: 'field-row' }, field('From', fromIn), field('To', toIn)),
+      estimate,
+      err,
+    ],
+    actions: (api) => [
+      h('button', { class: 'btn', type: 'button', onclick: () => api.close() }, 'Cancel'),
+      h('button', {
+        class: 'btn primary', type: 'button',
+        onclick: () => {
+          const f = fromIn.value;
+          const t = toIn.value;
+          if (!isDate(f) || !isDate(t)) { err.textContent = 'Pick both dates.'; return; }
+          if (f > t) { err.textContent = 'The start date must be on or before the end date.'; return; }
+          if (t > TODAY) { err.textContent = 'The end date can’t be in the future.'; return; }
+          api.close();
+          startRangeRun(f, t);
+        },
+      }, 'Start re-import'),
+    ],
+  });
+}
+
+function openConnectDialog(reconnect) {
+  let dialog;
+  const host = h('div');
+  const linkStep = () => [
+    h('div', { class: 'dialog-body' },
+      h('p', null, 'Send this link to a Raken Account Administrator, or open it yourself if that is you. It works for 15 minutes.'),
+      h('div', { class: 'link-box' },
+        h('input', { type: 'text', readonly: true, value: RAKEN_LINK, 'aria-label': 'Approval link' }),
+        h('button', { class: 'btn', type: 'button', onclick: () => toast('Link copied.') }, icon('copy'), 'Copy')),
+      h('div', { class: 'waiting' }, icon('spinner', 'spin'), h('span', null, 'Waiting for approval in Raken…'))),
+    h('div', { class: 'dialog-foot' },
+      h('button', { class: 'btn proto-only', type: 'button', onclick: () => host.replaceChildren(...doneStep()) }, 'Prototype: simulate approval'),
+      h('div', { class: 'spacer' }),
+      h('button', { class: 'btn', type: 'button', onclick: () => dialog.close() }, 'Cancel'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => toast('Prototype: this would open Raken’s approval page in a new tab.') }, icon('external'), 'Open Raken')),
+  ];
+  const doneStep = () => {
+    const fromIn = h('input', { type: 'date', value: DATA_START, max: TODAY });
+    return [
+      h('div', { class: 'dialog-body' },
+        h('p', { class: 'status-line', style: { color: 'var(--ink)' } }, statusIcon('good'), h('span', null, 'Raken is connected as ', h('strong', null, CONNECTION.name), ` (${CONNECTION.roleLabel}).`)),
+        reconnect
+          ? h('p', { style: { marginTop: '10px' } }, 'The hourly sync carries on as before. A sync runs now to catch up.')
+          : [h('h3', { class: 'dlg-h3' }, 'First import'),
+            h('p', null, 'Copy time cards from Raken, starting on this date. After that, changes come in automatically.'),
+            field('Import time cards from', fromIn, 'Up to today. Takes about a minute per month of data.')]),
+      h('div', { class: 'dialog-foot' },
+        reconnect
+          ? h('button', { class: 'btn primary', type: 'button', onclick: () => { dialog.close(); S.scenario = 'normal'; S.extraRuns = []; syncNow(); } }, 'Done')
+          : [h('button', { class: 'btn', type: 'button', onclick: () => { dialog.close(); S.scenario = 'normal'; render(); } }, 'Later'),
+            h('button', { class: 'btn primary', type: 'button', onclick: () => { dialog.close(); S.scenario = 'normal'; startRangeRun(isDate(fromIn.value) ? fromIn.value : DATA_START, TODAY); } }, 'Start first import')]),
+    ];
+  };
+  host.append(...linkStep());
+  dialog = openDialog({ title: reconnect ? 'Reconnect Raken' : 'Connect Raken', body: host, raw: true, width: '580px' });
+}
+
+// ---------------------------------------------------------------------------
+// Page: Settings (OT rules, users)
+// ---------------------------------------------------------------------------
+
+function pageSettings(sub) {
+  document.title = 'Settings · CRC Associates';
+  const tab = sub === 'users' && S.role === 'admin' ? 'users' : 'ot-rules';
+  const tabLink = (id, label) => h('a', { href: '#/settings/' + id, 'aria-current': tab === id ? 'page' : null }, label);
+  return h('div', { class: 'page' },
+    h('div', { class: 'page-head' }, h('div', null, h('h1', null, 'Settings'))),
+    h('nav', { class: 'tabs', 'aria-label': 'Settings' }, tabLink('ot-rules', 'OT rules'), S.role === 'admin' ? tabLink('users', 'Users') : null),
+    tab === 'users' ? usersPanel() : rulesPanel());
+}
+
+function rulesPanel() {
+  const cur = ruleFor(TODAY);
+  const weekdays = [1, 2, 3, 4, 5, 6, 7].filter((d) => !cur.weekend_days.includes(d));
+  return [
+    h('p', { class: 'lede' }, 'These rules decide which hours are Regular and which are OT. A change applies from its start date; reports for earlier dates keep the rules that applied then.'),
+    h('section', { class: 'card' },
+      h('div', { class: 'card-head' },
+        h('h2', { class: 'card-title' }, 'Current rules'),
+        h('span', { class: 'count' }, cur.effective_from === RULES_START ? 'In effect from the start' : `In effect since ${fmtDate(cur.effective_from, { year: true })}`),
+        h('div', { class: 'spacer' }),
+        S.role === 'admin' ? h('button', { class: 'btn', type: 'button', onclick: openRuleDialog }, icon('plus'), 'Schedule a change') : null),
+      h('div', { class: 'card-body rules' },
+        h('div', { class: 'rule-line' }, h('span', { class: 'k' }, 'Weekdays'), h('span', { class: 'd' }, dayRangeLabel(weekdays)),
+          h('span', null, `Hours on one project over ${fh(cur.threshold)} in a day are OT. Hours on different projects are never added together.`)),
+        h('div', { class: 'rule-line' }, h('span', { class: 'k' }, 'Weekend'), h('span', { class: 'd' }, dayRangeLabel(cur.weekend_days)),
+          h('span', null, cur.weekend_days.length ? 'All hours are OT.' : 'No weekend days.')))),
+    rulesExamples(cur),
+    rulesHistory(cur),
+    h('section', { class: 'card' },
+      h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Not in use yet'), h('span', { class: 'count' }, 'Planned, so the rules have room for them')),
+      h('div', { class: 'card-body future' },
+        h('div', null, h('strong', null, 'Weekly OT'), h('p', null, 'For example, hours over 40 in a week are OT. Not used for now.')),
+        h('div', null, h('strong', null, 'Company holidays'), h('p', null, 'To be decided. Probably counted like weekend days, from a holiday list.')))),
+  ];
+}
+
+function rulesExamples(rule) {
+  const examples = [[1, [['A', 10]]], [2, [['A', 6], ['B', 5]]], [3, [['A', 9], ['B', 2]]], [6, [['A', 5]]], [7, [['A', 3], ['B', 2]]]];
+  const n = (x) => String(Math.round(x * 100) / 100);
+  const rows = examples.map(([dow, parts]) => {
+    const weekend = rule.weekend_days.includes(dow);
+    const res = parts.map(([p, hrs]) => ({ p, hrs, reg: weekend ? 0 : Math.min(hrs, rule.threshold), ot: weekend ? hrs : Math.max(hrs - rule.threshold, 0) }));
+    const total = parts.reduce((a, [, x]) => a + x, 0);
+    const show = (key) => res.filter((x) => x[key] > 0).map((x) => `${x.p}: ${n(x[key])} h`).join(', ') || '0';
+    return h('tr', null,
+      h('td', null, DOW[dow - 1], weekend ? h('span', { class: 'code' }, 'weekend') : null),
+      h('td', null, res.map((x) => `${x.p}: ${n(x.hrs)} h`).join(', '), parts.length > 1 ? h('span', { class: 'code' }, `${n(total)} h total`) : null),
+      h('td', null, show('reg')),
+      h('td', null, show('ot')));
+  });
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Examples'), h('span', { class: 'count' }, 'One employee, one day; A and B are two projects.')),
+    h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
+      h('thead', null, h('tr', null, th('Day'), th('Hours worked'), th('Regular'), th('OT'))),
+      h('tbody', null, rows))));
+}
+
+function rulesHistory(cur) {
+  const rows = [...RULES].sort((a, b) => b.effective_from.localeCompare(a.effective_from));
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Rule history'), h('span', { class: 'count' }, 'Each rule applies from its date until the next one starts.')),
+    h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
+      h('thead', null, h('tr', null, th('From'), th('Weekday OT after', 'num'), th('Weekend days'), th('Note'), th('Status'), h('th', { scope: 'col' }, h('span', { class: 'sr-only' }, 'Actions')))),
+      h('tbody', null, rows.map((r) => {
+        const status = r.effective_from > TODAY ? 'Scheduled' : r === cur ? 'In effect' : 'Replaced';
+        return h('tr', null,
+          h('td', null, r.effective_from === RULES_START ? 'From the start' : fmtDate(r.effective_from, { dow: true, year: true })),
+          h('td', { class: 'num' }, `${fh(r.threshold)} h`),
+          h('td', null, dayRangeLabel(r.weekend_days)),
+          h('td', { class: 'wrap' }, r.note),
+          h('td', null, h('span', { class: 'badge ' + status.toLowerCase().replace(' ', '-'), style: { marginLeft: '0' } }, status)),
+          h('td', { class: 'num' }, status === 'Scheduled' && S.role === 'admin'
+            ? h('button', { class: 'btn sm ghost', type: 'button', onclick: () => confirmDialog({
+              title: 'Cancel this rule change?',
+              text: `The change planned for ${fmtDate(r.effective_from, { dow: true, year: true })} will not happen. The current rules stay in effect.`,
+              confirmLabel: 'Cancel change',
+              danger: true,
+              onConfirm: () => { RULES.splice(RULES.indexOf(r), 1); render(); toast('Rule change cancelled.'); },
+            }) }, 'Cancel change')
+            : null));
+      })))));
+}
+
+function openRuleDialog() {
+  const cur = ruleFor(TODAY);
+  const nextMonday = addDays(weekStart(TODAY), 7);
+  const dateIn = h('input', { type: 'date', value: nextMonday });
+  const thresholdIn = h('input', { type: 'number', id: 'rule-threshold', min: '0.25', max: '24', step: '0.25', value: String(cur.threshold), inputmode: 'decimal', style: { width: '120px' } });
+  const noteIn = h('textarea', { rows: '2', placeholder: 'Why is this changing? For example: new labor agreement.' });
+  const days = new Set(cur.weekend_days);
+  const summary = h('div', { class: 'rule-summary', 'aria-live': 'polite' });
+  const err = h('p', { class: 'field-error', role: 'alert' });
+  const dayButtons = DOW.map((name, i) => {
+    const day = i + 1;
+    const b = h('button', {
+      class: 'day-toggle', type: 'button', 'aria-pressed': String(days.has(day)), 'aria-label': DOW_LONG[i],
+      onclick: () => { if (days.has(day)) days.delete(day); else days.add(day); b.setAttribute('aria-pressed', String(days.has(day))); update(); },
+    }, name);
+    return b;
+  });
+
+  // Returns a problem that blocks saving, or null.
+  const problem = () => {
+    const date = dateIn.value;
+    const threshold = Number(thresholdIn.value);
+    if (!isDate(date)) return 'Pick a start date.';
+    if (!(threshold > 0 && threshold <= 24)) return 'Enter hours between 0.25 and 24.';
+    if (RULES.some((r) => r.effective_from === date)) return 'There is already a rule starting on this date.';
+    const before = ruleFor(date);
+    if (before && before.threshold === threshold && sortedDays(before.weekend_days).join() === sortedDays(days).join()) return 'Nothing would change: this matches the rule already in effect on that date.';
+    if (!noteIn.value.trim()) return 'Add a short note so others know why the rules changed.';
+    return null;
+  };
+
+  function update() {
+    const date = dateIn.value;
+    const threshold = Number(thresholdIn.value);
+    summary.replaceChildren();
+    if (!isDate(date) || !(threshold > 0 && threshold <= 24)) return;
+    const wk = sortedDays(days);
+    const weekdays = [1, 2, 3, 4, 5, 6, 7].filter((d) => !days.has(d));
+    summary.append(
+      h('strong', null, `From ${fmtDate(date, { dow: true, year: true })}:`), ' ',
+      weekdays.length ? `on ${dayRangeLabel(weekdays)}, hours on one project over ${fh(threshold)} in a day are OT. ` : '',
+      wk.length ? `On ${weekendNames(wk)}, all hours are OT. ` : 'No weekend days. ',
+      `Reports before ${fmtDate(date, { year: true })} do not change.`);
+    if (date <= TODAY) {
+      summary.append(notice('warn', h('strong', null, 'This date is not in the future. '),
+        `Hours from ${fmtDate(date, { year: true })} to today will be recalculated, including weeks that may already have been paid.`));
+    }
+  }
+  dateIn.addEventListener('input', update);
+  thresholdIn.addEventListener('input', update);
+  update();
+
+  openDialog({
+    title: 'Schedule an OT rule change',
+    width: '620px',
+    body: [
+      h('p', { class: 'muted' }, 'The new rule applies from its start date. Earlier dates keep the rules that applied then.'),
+      h('div', { class: 'field-row' },
+        field('Starts on', dateIn),
+        h('div', { class: 'field' },
+          h('label', { for: 'rule-threshold' }, 'Weekday OT after'),
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, thresholdIn, h('span', { class: 'muted' }, 'hours on one project in a day')))),
+      h('div', { class: 'field' }, h('span', { style: { fontWeight: 550, fontSize: '13px' }, id: 'weekend-label' }, 'Weekend days (all hours OT)'),
+        h('div', { class: 'day-toggles', role: 'group', 'aria-labelledby': 'weekend-label' }, dayButtons)),
+      field('Note', noteIn),
+      summary,
+      err,
+    ],
+    actions: (api) => [
+      h('button', { class: 'btn', type: 'button', onclick: () => api.close() }, 'Cancel'),
+      h('button', {
+        class: 'btn primary', type: 'button',
+        onclick: () => {
+          const issue = problem();
+          if (issue) { err.textContent = issue; return; }
+          const date = dateIn.value;
+          RULES.push({ id: nextRuleId++, effective_from: date, threshold: Number(thresholdIn.value), weekend_days: sortedDays(days), note: noteIn.value.trim() });
+          api.close();
+          render();
+          toast(date > TODAY ? `Rule change scheduled for ${fmtDate(date, { year: true })}.` : `Rule change saved. Hours from ${fmtDate(date, { year: true })} on are recalculated.`);
+        },
+      }, 'Save rule change'),
+    ],
+  });
+}
+
+function usersPanel() {
+  const roleLabel = (role) => (role === 'admin' ? 'Admin' : 'Viewer');
+  const tbody = h('tbody', null, S.users.map((u) => h('tr', null,
+    h('th', { scope: 'row' }, u.name || h('span', { class: 'muted' }, 'Invited'), u.you ? h('span', { class: 'badge' }, 'You') : null),
+    h('td', null, u.email),
+    h('td', null, u.you ? roleLabel(u.role) : h('select', {
+      class: 'role-select', 'aria-label': `Role for ${u.name || u.email}`, value: u.role,
+      onchange: (e) => { u.role = e.target.value; toast(`${u.name || u.email} is now ${roleLabel(u.role).toLowerCase() === 'admin' ? 'an admin' : 'a viewer'}.`); },
+    }, h('option', { value: 'viewer' }, 'Viewer'), h('option', { value: 'admin' }, 'Admin'))),
+    h('td', null, u.invited ? h('span', { class: 'status' }, statusIcon('off'), `Invite sent ${fmtWhen(u.invited)}`) : fmtWhen(u.last)),
+    h('td', { class: 'num' }, u.you ? null : h('button', {
+      class: 'btn sm ghost', type: 'button',
+      onclick: () => confirmDialog({
+        title: u.invited ? 'Cancel this invite?' : `Remove ${u.name}?`,
+        text: u.invited ? `${u.email} won’t be able to sign in.` : `${u.name} won’t be able to sign in any more. You can invite them again later.`,
+        confirmLabel: u.invited ? 'Cancel invite' : 'Remove',
+        danger: true,
+        onConfirm: () => { S.users.splice(S.users.indexOf(u), 1); render(); toast(u.invited ? 'Invite cancelled.' : `${u.name} removed.`); },
+      }),
+    }, u.invited ? 'Cancel invite' : 'Remove')))));
+  return [
+    h('p', { class: 'lede' }, 'Only people on this list can sign in. They get a sign-in link by email, so there are no passwords to manage.'),
+    h('section', { class: 'card' },
+      h('div', { class: 'card-head' },
+        h('h2', { class: 'card-title' }, 'Users'),
+        h('span', { class: 'count' }, plural(S.users.length, 'person', 'people')),
+        h('div', { class: 'spacer' }),
+        h('button', { class: 'btn', type: 'button', onclick: openInviteDialog }, icon('plus'), 'Invite someone')),
+      h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
+        h('thead', null, h('tr', null, th('Name'), th('Email'), th('Role'), th('Last sign-in'), h('th', { scope: 'col' }, h('span', { class: 'sr-only' }, 'Actions')))),
+        tbody))),
+    h('section', { class: 'card' },
+      h('div', { class: 'card-head' }, h('h2', { class: 'card-title' }, 'Roles')),
+      h('div', { class: 'card-body roles' },
+        h('div', null, h('strong', null, 'Viewer'), h('p', null, 'Sees hours for any date range and exports Excel reports. Can see the OT rules and the sync status.')),
+        h('div', null, h('strong', null, 'Admin'), h('p', null, 'Everything a viewer can do, plus: runs and re-imports the Raken sync, reconnects Raken, schedules OT rule changes and manages users.')))),
+  ];
+}
+
+function openInviteDialog() {
+  const email = h('input', { type: 'email', placeholder: 'name@company.com', autocomplete: 'off' });
+  const role = h('select', null, h('option', { value: 'viewer' }, 'Viewer'), h('option', { value: 'admin' }, 'Admin'));
+  const err = h('p', { class: 'field-error', role: 'alert' });
+  openDialog({
+    title: 'Invite someone',
+    body: [h('p', { class: 'muted' }, 'They get an email with a sign-in link.'), field('Email', email), field('Role', role), err],
+    actions: (api) => [
+      h('button', { class: 'btn', type: 'button', onclick: () => api.close() }, 'Cancel'),
+      h('button', {
+        class: 'btn primary', type: 'button',
+        onclick: () => {
+          const value = email.value.trim();
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) { err.textContent = 'Enter an email address.'; email.focus(); return; }
+          if (S.users.some((u) => u.email.toLowerCase() === value.toLowerCase())) { err.textContent = 'This person is already on the list.'; return; }
+          S.users.push({ name: null, email: value, role: role.value, invited: NOW });
+          api.close();
+          render();
+          toast(`Prototype: an invite would be emailed to ${value}.`);
+        },
+      }, icon('mail'), 'Send invite'),
+    ],
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Page: Sign in (invite-only, emailed sign-in link)
+// ---------------------------------------------------------------------------
+
+function pageLogin() {
+  document.title = 'Sign in · CRC Associates Hours';
+  const brand = h('div', { class: 'login-brand' },
+    h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'CRC'),
+    h('div', null, h('div', { class: 'brand-name' }, 'CRC Associates'), h('div', { class: 'muted small' }, 'Hours')));
+  if (S.loginSent) {
+    return h('div', { class: 'login-wrap' }, h('main', { class: 'card login-card' }, brand,
+      h('h1', null, 'Check your email'),
+      h('p', null, 'We sent a sign-in link to ', h('strong', null, S.loginSent), '. It works once, for one hour.'),
+      h('p', { class: 'muted small', style: { marginTop: '10px' } }, 'No email after a few minutes? Check your spam folder, or ',
+        h('button', { class: 'btn-link', type: 'button', onclick: () => { S.loginSent = null; render(); } }, 'try again'), '.'),
+      h('button', { class: 'btn block proto-only', type: 'button', onclick: () => { S.loginSent = null; S.signedIn = true; go('/hours'); } }, 'Prototype: open the sign-in link')));
+  }
+  const email = h('input', { type: 'email', autocomplete: 'email', placeholder: 'name@company.com' });
+  const err = h('p', { class: 'field-error', role: 'alert' });
+  return h('div', { class: 'login-wrap' }, h('main', { class: 'card login-card' }, brand,
+    h('h1', null, 'Sign in'),
+    h('p', { class: 'muted' }, 'Enter your work email and we’ll send you a sign-in link. No password needed.'),
+    h('form', {
+      novalidate: true,
+      onsubmit: (e) => {
+        e.preventDefault();
+        const value = email.value.trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) { err.textContent = 'Enter your work email address.'; email.focus(); return; }
+        S.loginSent = value;
+        render();
+      },
+    }, field('Work email', email), err, h('button', { class: 'btn primary block', type: 'submit' }, icon('mail'), 'Email me a sign-in link')),
+    h('p', { class: 'login-foot muted small' }, 'Access is by invitation. If you can’t sign in, ask an admin to invite you.')));
+}
+
+// ---------------------------------------------------------------------------
+// Prototype controls (not part of the design)
+// ---------------------------------------------------------------------------
+
+function protoPanel() {
+  const seg = (label, key, options, after) => h('div', { class: 'proto-group' },
+    h('span', null, label),
+    h('div', { class: 'proto-seg' }, options.map(([value, text]) => h('button', {
+      type: 'button', 'aria-pressed': String(S[key] === value),
+      onclick: () => { S[key] = value; if (after) after(value); render(); },
+    }, text))));
+  const body = S.protoOpen ? h('div', { class: 'proto-body', id: 'proto-body' },
+    h('h2', null, 'Prototype controls'),
+    h('p', { class: 'proto-note', style: { marginTop: '0' } }, 'Not part of the app. Switch situations to see how each screen handles them.'),
+    seg('Situation', 'scenario', [['normal', 'All good'], ['failed', 'Sync failing'], ['disconnected', 'Not connected']], () => { S.running = null; S.extraRuns = []; }),
+    seg('Signed in as', 'role', [['admin', 'Admin'], ['viewer', 'Viewer']]),
+    seg('Theme', 'theme', [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']]),
+    h('div', { class: 'proto-links' },
+      h('a', { href: href('/hours/employee/1', { from: '2026-09-14', to: '2026-09-20' }) }, 'Marcus Reyes, week of Sep 14 (the examples)'),
+      h('button', { type: 'button', onclick: () => { S.signedIn = false; S.loginSent = null; go('/login'); } }, 'Sign-in page')),
+    h('p', { class: 'proto-note' }, 'Sample data. “Today” is Sat, Sep 26, 2026. Marcus Reyes’s week of Sep 14 is the example week from REQUIREMENTS.md.')) : null;
+  return h('aside', { class: 'proto', 'aria-label': 'Prototype controls' }, body,
+    h('button', {
+      class: 'proto-toggle', type: 'button', 'aria-expanded': String(S.protoOpen), 'aria-controls': 'proto-body',
+      onclick: () => { S.protoOpen = !S.protoOpen; render(); },
+    }, icon(S.protoOpen ? 'chevronDown' : 'sliders'), 'Prototype'));
+}
+
+// Prototype only: ?scenario=failed|disconnected, ?role=viewer, ?theme=dark and
+// ?controls=open preset the controls above, so any situation can be linked.
+(function readPrototypeParams() {
+  const p = new URLSearchParams(location.search);
+  if (['normal', 'failed', 'disconnected'].includes(p.get('scenario'))) S.scenario = p.get('scenario');
+  if (['admin', 'viewer'].includes(p.get('role'))) S.role = p.get('role');
+  if (['auto', 'light', 'dark'].includes(p.get('theme'))) S.theme = p.get('theme');
+  if (p.get('controls') === 'open') S.protoOpen = true;
+})();
+
+render();
+</script>
+</body>
+</html>
