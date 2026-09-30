@@ -20,3 +20,10 @@ weekend hours are OT.
   secrets `Client_ID` and `Raken_secret`.
 - On this machine, if `git` or `supabase` isn't found, refresh PATH first:
   `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine')+';'+[Environment]::GetEnvironmentVariable('Path','User')`
+- While Raken refuses data access, time cards come from file uploads (`upload/`,
+  see `upload/README.md`). Uploads never touch Raken.
+- Supabase's API refuses UPDATE or DELETE without a WHERE clause, even inside
+  functions (use `where true` for a whole table). The CLI doesn't enforce this, so
+  also test such functions through the API.
+- Checks (run after database changes; every row should say PASS):
+  `supabase db query --linked -f supabase/checks/ot_rules_check.sql` and `.../upload_check.sql`.

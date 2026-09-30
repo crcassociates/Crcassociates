@@ -6,6 +6,12 @@
       "runtimeExecutable": "powershell.exe",
       "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "design/serve.ps1", "-Port", "4173"],
       "port": 4173
+    },
+    {
+      "name": "upload-page",
+      "runtimeExecutable": "powershell.exe",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "upload/server.ps1", "-Port", "4174", "-NoBrowser"],
+      "port": 4174
     }
   ]
 }

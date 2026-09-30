@@ -11,3 +11,9 @@ supabase/.temp/
 
 # Generated reports
 reports/*.xlsx
+
+# Time card files (employee names and hours) - never commit
+*.csv
+*.tsv
+*.xls
+*.xlsx

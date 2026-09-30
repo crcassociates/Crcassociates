@@ -89,6 +89,10 @@ so the screens can be checked against the expected results.
 - **Report data.** `hours_summary` gives the employee + project totals. The
   employee-level "Days" (distinct days) and the unapproved counts come from
   `daily_project_hours`, or the function can be extended.
+- **File upload.** The upload page in `upload/` (a stand-in while the Raken API
+  can't read data) moves into the web page as an admin-only screen next to
+  Raken sync. It already uses `import_time_cards`, `undo_import` and
+  `import_history`.
 - **Admin actions go through the server.** Sync now, re-import dates and the
   Raken approval link need an endpoint that checks the user is an admin and then
   calls `raken-sync` / `raken-auth`. Those functions accept only the service

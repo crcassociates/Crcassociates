@@ -1,0 +1,1087 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="session-token" content="__SESSION_TOKEN__">
+<meta name="uploaded-by" content="__UPLOADED_BY__">
+<title>Upload time cards · CRC Associates</title>
+<style>
+/* Same design tokens as design/ui-prototype.html. Regular = blue, OT = orange
+   (the validated chart pair); status colors only for state, with icon + label. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --raised: #ffffff; --sunken: #f4f3ef;
+  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #6b6a66; --muted: #898781;
+  --line: #e1e0d9; --line-strong: #c3c2b7; --border: rgba(11, 11, 11, 0.10);
+  --control-border: rgba(11, 11, 11, 0.18); --input-border: #898781;
+  --wash: rgba(11, 11, 11, 0.035); --wash-2: rgba(11, 11, 11, 0.07);
+  --reg: #2a78d6; --ot: #eb6834;
+  --good: #0ca30c; --warning: #fab219; --warning-wash: #fdf3dc; --warning-line: rgba(250, 178, 25, 0.55);
+  --critical: #d03b3b; --critical-wash: #fbeaea; --critical-line: rgba(208, 59, 59, 0.35);
+  --good-wash: #e9f5e9; --good-line: rgba(12, 163, 12, 0.35);
+  --link: #1c5cab; --focus: #2a78d6; --btn: #0b0b0b; --btn-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.06), 0 12px 32px rgba(11, 11, 11, 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --raised: #232322; --sunken: #151514;
+    --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #9a988f; --muted: #898781;
+    --line: #2c2c2a; --line-strong: #383835; --border: rgba(255, 255, 255, 0.10);
+    --control-border: rgba(255, 255, 255, 0.18); --input-border: #6a6863;
+    --wash: rgba(255, 255, 255, 0.04); --wash-2: rgba(255, 255, 255, 0.08);
+    --reg: #3987e5; --ot: #d95926;
+    --warning-wash: rgba(250, 178, 25, 0.12); --warning-line: rgba(250, 178, 25, 0.40);
+    --critical-wash: rgba(208, 59, 59, 0.16); --critical-line: rgba(208, 59, 59, 0.45);
+    --good-wash: rgba(12, 163, 12, 0.14); --good-line: rgba(12, 163, 12, 0.40);
+    --link: #86b6ef; --focus: #3987e5; --btn: #ffffff; --btn-ink: #0b0b0b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: var(--link); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+.status-icon { width: 16px; height: 16px; flex: none; }
+.status-icon .bg { fill: var(--muted); }
+.status-icon.good .bg { fill: var(--good); }
+.status-icon.warn .bg { fill: var(--warning); }
+.status-icon.crit .bg { fill: var(--critical); }
+.status-icon.off .bg { fill: none; stroke: var(--muted); stroke-width: 2; }
+.status-icon .fg { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.status-icon .dot { fill: #fff; }
+.status-icon.warn .fg { stroke: #0b0b0b; }
+.status-icon.warn .dot { fill: #0b0b0b; }
+.muted { color: var(--ink-2); }
+.small { font-size: 12.5px; }
+.num { text-align: right !important; font-variant-numeric: tabular-nums; }
+.spacer { flex: 1; }
+.count { color: var(--ink-2); font-size: 13px; }
+
+.topbar { position: sticky; top: 0; z-index: 30; background: var(--surface); border-bottom: 1px solid var(--border); }
+.topbar-inner { max-width: 1100px; height: 56px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--ink); color: var(--surface); font-size: 10px; font-weight: 800; letter-spacing: 0.04em; }
+.brand-name { font-weight: 650; font-size: 15px; }
+.local-pill { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--border); color: var(--ink-2); font-size: 13px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 24px 96px; display: flex; flex-direction: column; gap: 16px; }
+.page-head h1 { font-size: 24px; font-weight: 650; letter-spacing: -0.01em; }
+.page-head .sub { margin-top: 4px; color: var(--ink-2); max-width: 760px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--surface); color: var(--ink); font-weight: 500; white-space: nowrap; text-decoration: none; }
+.btn:hover { background: var(--wash); }
+.btn.primary { background: var(--btn); border-color: var(--btn); color: var(--btn-ink); }
+.btn.primary:hover { opacity: 0.88; }
+.btn.danger { background: var(--critical); border-color: var(--critical); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--wash); }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+.btn:disabled { opacity: 0.5; }
+.btn-link { padding: 0; border: 0; background: none; color: var(--link); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+select { height: 34px; padding: 0 8px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--raised); color: var(--ink); max-width: 100%; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.card-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-height: 56px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.card-title { font-size: 15px; font-weight: 600; }
+.card-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.card-body h3 { font-size: 13px; font-weight: 650; }
+.actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.notice { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); }
+.notice > .status-icon { margin-top: 1px; }
+.notice.warn { background: var(--warning-wash); border-color: var(--warning-line); }
+.notice.crit { background: var(--critical-wash); border-color: var(--critical-line); }
+.notice.good { background: var(--good-wash); border-color: var(--good-line); }
+.notice ul { margin: 4px 0 0; padding-left: 18px; }
+.readonly-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: var(--sunken); border: 1px solid var(--border); color: var(--ink-2); }
+.readonly-banner .icon { color: var(--ink); }
+.readonly-banner strong { color: var(--ink); }
+
+.drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 150px; padding: 24px; border: 2px dashed var(--line-strong); border-radius: 12px; background: var(--sunken); text-align: center; cursor: pointer; }
+.drop:hover, .drop.over { border-color: var(--ink-2); background: var(--wash-2); }
+.drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.drop .icon { width: 28px; height: 28px; color: var(--ink-2); }
+.drop strong { font-size: 15px; }
+.file-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; }
+table.data th, table.data td { padding: 7px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+table.data thead th { padding-top: 8px; padding-bottom: 8px; color: var(--ink-2); font-size: 12px; font-weight: 600; background: var(--surface); white-space: nowrap; }
+table.data tbody th { font-weight: 550; }
+table.data tr:last-child > * { border-bottom: 0; }
+table.mapping td.examples { color: var(--ink-2); font-size: 13px; }
+table.mapping .req { color: var(--ink-3); font-weight: 400; }
+table.mapping .hint { display: block; color: var(--ink-3); font-size: 12px; font-weight: 400; }
+.cell-bad { background: var(--warning-wash); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 4px 0 10px; border-radius: 999px; border: 1px solid var(--control-border); background: var(--raised); font-size: 13px; }
+.chip button { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); }
+.chip button:hover { background: var(--wash-2); color: var(--ink); }
+.chip .icon { width: 12px; height: 12px; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.tile { padding: 12px 14px; border-radius: 10px; background: var(--raised); border: 1px solid var(--border); }
+.tile-label { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 12.5px; }
+.tile-value { margin-top: 4px; font-size: 21px; font-weight: 600; }
+.tile-line { margin-top: 2px; color: var(--ink-2); font-size: 12px; }
+.sw { display: inline-block; width: 10px; height: 10px; flex: none; border-radius: 2px; }
+.sw.reg { background: var(--reg); }
+.sw.ot { background: var(--ot); }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+details summary { cursor: pointer; font-weight: 550; }
+details[open] summary { margin-bottom: 8px; }
+.list-inline { color: var(--ink-2); }
+
+.toast { position: fixed; left: 50%; bottom: 24px; z-index: 90; max-width: min(560px, calc(100vw - 32px)); padding: 11px 16px; border-radius: 10px; background: var(--ink); color: var(--surface); box-shadow: var(--shadow); opacity: 0; transform: translate(-50%, 16px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 700px) {
+  .topbar-inner, .container { padding-left: 16px; padding-right: 16px; }
+  .local-pill span { display: none; }
+}
+</style>
+<!-- Reads Excel files in the browser. CSV files are read without it. -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">CRC</span><span class="brand-name">CRC Associates</span></div>
+    <div class="spacer"></div>
+    <span class="local-pill" id="local-pill"></span>
+  </div>
+</header>
+
+<main class="container" id="main">
+  <div class="page-head">
+    <h1>Upload time cards</h1>
+    <p class="sub">Use this while the Raken sync can’t read data. Export time cards from Raken’s website as Excel or CSV and upload the file here. Uploaded time cards use the same OT rules as the Raken sync.</p>
+  </div>
+  <div class="readonly-banner" id="readonly-banner"></div>
+
+  <section class="card" aria-labelledby="step1-title">
+    <div class="card-head"><h2 class="card-title" id="step1-title">1. Choose a file</h2></div>
+    <div class="card-body">
+      <label class="drop" id="drop">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.txt" class="sr-only">
+        <span id="drop-icon"></span>
+        <strong>Drop an Excel or CSV file here</strong>
+        <span class="muted">or <span class="btn-link">choose a file</span></span>
+      </label>
+      <div id="file-status"></div>
+      <p class="muted small">Export the dates you want from Raken, for example last week. A file replaces any earlier upload for the same dates, so uploading a corrected file never counts hours twice.</p>
+    </div>
+  </section>
+
+  <section class="card" id="step-columns" hidden aria-labelledby="step2-title">
+    <div class="card-head"><h2 class="card-title" id="step2-title">2. Check the columns</h2><span class="count" id="file-info"></span></div>
+    <div class="card-body" id="columns-body"></div>
+  </section>
+
+  <section class="card" id="step-review" hidden aria-labelledby="step3-title">
+    <div class="card-head"><h2 class="card-title" id="step3-title">3. Review and import</h2></div>
+    <div class="card-body" id="review-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="history-title">
+    <div class="card-head">
+      <h2 class="card-title" id="history-title">Recent uploads</h2>
+      <div class="spacer"></div>
+      <button class="btn sm ghost" type="button" id="history-refresh">Refresh</button>
+    </div>
+    <div class="table-wrap" id="history"></div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// ===========================================================================
+// Upload page for time card files. Served by upload/server.ps1, which adds
+// the Supabase key; this page only ever talks to that local server.
+// The file is read here; checking and saving happen in Supabase
+// (public.import_time_cards). Nothing here talks to Raken.
+// ===========================================================================
+
+const TOKEN = document.querySelector('meta[name="session-token"]').content;
+const UPLOADED_BY = document.querySelector('meta[name="uploaded-by"]').content;
+
+// ---------------------------------------------------------------------------
+// DOM helpers. Text always becomes text nodes, never HTML.
+// ---------------------------------------------------------------------------
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+const $ = (id) => document.getElementById(id);
+
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  let value;
+  if (props) {
+    for (const [key, v] of Object.entries(props)) {
+      if (v === null || v === undefined || v === false) continue;
+      if (key === 'class') el.className = v;
+      else if (key === 'style') Object.assign(el.style, v);
+      else if (key === 'value') value = v;
+      else if (key.startsWith('on') && typeof v === 'function') el.addEventListener(key.slice(2).toLowerCase(), v);
+      else el.setAttribute(key, v === true ? '' : String(v));
+    }
+  }
+  for (const kid of children.flat(Infinity)) {
+    if (kid === null || kid === undefined || kid === false || kid === true) continue;
+    el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  }
+  if (value !== undefined) el.value = value;
+  return el;
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+  return el;
+}
+
+const ICON_PATHS = {
+  upload: ['M12 15V3', 'm7 8 5-5 5 5', 'M5 21h14'],
+  sheet: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6', 'M8 13h8', 'M8 17h8'],
+  shield: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'm9 12 2 2 4-4'],
+  close: ['M18 6 6 18', 'm6 6 12 12'],
+  spinner: ['M21 12a9 9 0 1 1-6.2-8.6'],
+  laptop: ['M4 5h16v11H4z', 'M2 20h20'],
+};
+
+function icon(name, cls) {
+  const svg = svgEl('svg', { viewBox: '0 0 24 24', class: 'icon' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true', focusable: 'false' });
+  for (const d of ICON_PATHS[name]) svg.append(svgEl('path', { d }));
+  return svg;
+}
+
+function statusIcon(kind) {
+  const svg = svgEl('svg', { viewBox: '0 0 20 20', class: 'status-icon ' + kind, 'aria-hidden': 'true', focusable: 'false' });
+  if (kind === 'good') {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 9 }), svgEl('path', { class: 'fg', d: 'm6 10.4 2.7 2.6L14.2 7.4' }));
+  } else if (kind === 'warn') {
+    svg.append(
+      svgEl('path', { class: 'bg', d: 'M8.7 2.3a1.5 1.5 0 0 1 2.6 0l7.5 13.2a1.5 1.5 0 0 1-1.3 2.2H2.5a1.5 1.5 0 0 1-1.3-2.2z' }),
+      svgEl('path', { class: 'fg', d: 'M10 7.4v4.2' }),
+      svgEl('circle', { class: 'dot', cx: 10, cy: 14.5, r: 1.15 }));
+  } else if (kind === 'crit') {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 9 }), svgEl('path', { class: 'fg', d: 'm7 7 6 6m0-6-6 6' }));
+  } else {
+    svg.append(svgEl('circle', { class: 'bg', cx: 10, cy: 10, r: 7.5 }));
+  }
+  return svg;
+}
+
+function notice(kind, ...content) {
+  return h('div', { class: 'notice ' + kind, role: kind === 'crit' ? 'alert' : 'status' }, statusIcon(kind), h('div', null, content));
+}
+
+let toastTimer;
+function toast(message) {
+  const el = $('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
+// ---------------------------------------------------------------------------
+// Formatting
+// ---------------------------------------------------------------------------
+
+const nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat('en-US');
+const fh = (n) => nf2.format(Number(n) || 0);
+const plural = (n, one, many) => `${nf0.format(n)} ${n === 1 ? one : (many || one + 's')}`;
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const pad = (n) => String(n).padStart(2, '0');
+const isIso = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+function fmtDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${MON[m - 1]} ${d}, ${y}`;
+}
+
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const fmtDateDow = (iso) => `${DOW[new Date(iso + 'T00:00:00Z').getUTCDay()]}, ${fmtDate(iso)}`;
+
+function fmtRange(a, b) {
+  if (!a || !b) return '';
+  if (a === b) return fmtDate(a);
+  const [ya, ma, da] = a.split('-').map(Number);
+  const [yb, mb, db] = b.split('-').map(Number);
+  if (ya !== yb) return `${fmtDate(a)} – ${fmtDate(b)}`;
+  if (ma === mb) return `${MON[ma - 1]} ${da} – ${db}, ${ya}`;
+  return `${MON[ma - 1]} ${da} – ${MON[mb - 1]} ${db}, ${ya}`;
+}
+
+function fmtWhen(timestamp) {
+  return new Date(timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+// ---------------------------------------------------------------------------
+// Local server
+// ---------------------------------------------------------------------------
+
+async function api(method, path, body) {
+  let res;
+  try {
+    res = await fetch(path, {
+      method,
+      headers: body ? { 'X-Session-Token': TOKEN, 'Content-Type': 'application/json' } : { 'X-Session-Token': TOKEN },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error('The upload page’s window on this computer is closed. Start it again with “Start upload page”.');
+  }
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { message: text }; }
+  if (!res.ok) throw new Error((data && (data.message || data.error)) || `Request failed (${res.status})`);
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Reading the file. Every cell becomes { t, v, w, z }: type (s text, n number,
+// b yes/no, d date), value, text as shown, and number format.
+// ---------------------------------------------------------------------------
+
+const MAX_ROWS = 60000;
+const MAX_COLUMNS = 200;
+
+function decodeText(buffer) {
+  let text = new TextDecoder('utf-8').decode(buffer);
+  if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buffer);
+  return text.replace(/^﻿/, '');
+}
+
+// CSV (or tab/semicolon separated), with quoted fields.
+function parseDelimited(text) {
+  const firstLine = text.split(/\r\n|\n|\r/, 1)[0] || '';
+  const counts = { ',': 0, ';': 0, '\t': 0 };
+  let quoted = false;
+  for (const ch of firstLine) {
+    if (ch === '"') quoted = !quoted;
+    else if (!quoted && ch in counts) counts[ch] += 1;
+  }
+  const delim = Object.keys(counts).reduce((best, ch) => (counts[ch] > counts[best] ? ch : best), ',');
+
+  const rows = [];
+  let cells = [];
+  let field = '';
+  let inQuotes = false;
+  let line = 1;
+  let rowLine = 1;
+  const endField = () => { cells.push(field); field = ''; };
+  const endRow = () => { endField(); rows.push({ n: rowLine, cells }); cells = []; };
+  for (let i = 0; i < text.length && rows.length <= MAX_ROWS; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
+      } else {
+        if (ch === '\n') line++;
+        field += ch;
+      }
+    } else if (ch === '"' && field === '') {
+      inQuotes = true;
+    } else if (ch === delim) {
+      endField();
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      endRow();
+      line++;
+      rowLine = line;
+    } else {
+      field += ch;
+    }
+  }
+  if (field !== '' || cells.length) endRow();
+  return rows.map((r) => ({ n: r.n, cells: r.cells.slice(0, MAX_COLUMNS).map((v) => (v.trim() === '' ? null : { t: 's', v: v.trim(), w: v.trim() })) }));
+}
+
+function sheetRows(ws) {
+  if (!ws || !ws['!ref']) return [];
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const lastRow = Math.min(range.e.r, range.s.r + MAX_ROWS);
+  const lastCol = Math.min(range.e.c, range.s.c + MAX_COLUMNS - 1);
+  const rows = [];
+  for (let r = range.s.r; r <= lastRow; r++) {
+    const cells = [];
+    for (let c = range.s.c; c <= lastCol; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      const empty = !cell || cell.v === undefined || cell.v === null || (cell.t === 's' && String(cell.v).trim() === '');
+      cells.push(empty ? null : { t: cell.t, v: cell.t === 's' ? String(cell.v).trim() : cell.v, w: cell.w, z: cell.z });
+    }
+    rows.push({ n: r + 1, cells });
+  }
+  return rows;
+}
+
+async function readFile(file) {
+  const buffer = await file.arrayBuffer();
+  if (/\.(csv|txt|tsv)$/i.test(file.name)) {
+    return { sheets: [{ name: 'CSV', rows: parseDelimited(decodeText(buffer)) }], date1904: false };
+  }
+  if (typeof XLSX === 'undefined') {
+    throw new Error('The Excel reader didn’t load (is this computer online?). Save the file as CSV in Excel and upload that instead.');
+  }
+  const wb = XLSX.read(buffer, { type: 'array', cellNF: true, cellDates: false });
+  const date1904 = !!(wb.Workbook && wb.Workbook.WBProps && wb.Workbook.WBProps.date1904);
+  return { sheets: wb.SheetNames.map((name) => ({ name, rows: sheetRows(wb.Sheets[name]) })), date1904 };
+}
+
+const cellText = (cell) => {
+  if (!cell) return '';
+  if (cell.t === 's') return String(cell.v);
+  return String(cell.w != null ? cell.w : cell.v).trim();
+};
+
+// ---------------------------------------------------------------------------
+// Finding the columns
+// ---------------------------------------------------------------------------
+
+// Lower case, punctuation as spaces, and "#" as "number" ("Job #" -> "job number").
+const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/#/g, ' number ').replace(/[_\-.:?]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+const FIRST_NAMES = ['first name', 'worker first name', 'employee first name', 'member first name'];
+const SYNONYMS = {
+  employee: ['employee', 'employee name', 'worker', 'worker name', 'member', 'member name', 'team member', 'crew member', 'full name', 'name', ...FIRST_NAMES],
+  last_name: ['last name', 'worker last name', 'employee last name', 'member last name', 'surname'],
+  employee_code: ['eid', 'employee id', 'employee code', 'employee number', 'employee no', 'emp id', 'emp no', 'emp number', 'worker id', 'worker code', 'badge', 'badge number', 'payroll id'],
+  project: ['project', 'project name', 'job', 'job name', 'jobsite', 'job site'],
+  project_number: ['project number', 'project no', 'project id', 'project code', 'job number', 'job no', 'job id', 'job code'],
+  date: ['date', 'work date', 'day', 'time card date', 'timecard date', 'entry date', 'date worked', 'worked date', 'shift date'],
+  hours_total: ['total hours', 'hours', 'total', 'hrs', 'total hrs', 'hours worked', 'worked hours', 'total time', 'duration'],
+  hours_parts: ['st', 'st hours', 'regular', 'regular hours', 'reg', 'reg hours', 'straight time', 'ot', 'ot hours', 'overtime', 'overtime hours', 'dt', 'dt hours', 'double time', 'doubletime', 'double time hours'],
+  approved: ['approved', 'approval', 'approval status', 'status', 'time card status', 'timecard status'],
+};
+const KNOWN_NAMES = new Set(Object.values(SYNONYMS).flat());
+
+// Not imported, but used to check the file: a weekday column (does each date
+// fall on that day?) and Raken's pay type (RT/OT/DT rows are all added up).
+const DAY_COLUMNS = ['day', 'weekday', 'day of week', 'day name'];
+const PAY_TYPE_COLUMNS = ['pay type', 'paytype', 'pay code', 'earning code', 'earnings code', 'hour type', 'hours type', 'time type'];
+const WORK_PAY_TYPES = ['rt', 'st', 'reg', 'regular', 'straight time', 'ot', 'overtime', 'dt', 'double time', 'doubletime'];
+const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+function findExtraColumns(headers, map) {
+  const names = headers.map(norm);
+  const pick = (list) => {
+    const i = names.findIndex((name, c) => list.includes(name) && c !== map.date);
+    return i >= 0 ? i : null;
+  };
+  return { day: pick(DAY_COLUMNS), payType: pick(PAY_TYPE_COLUMNS) };
+}
+
+// 0 = Sunday ... 6 = Saturday, or -1 when the text isn't a weekday.
+function weekdayIndex(value) {
+  const s = norm(value);
+  return s.length >= 3 ? WEEKDAYS.findIndex((day) => day.startsWith(s)) : -1;
+}
+
+const FIELDS = [
+  { key: 'employee', label: 'Employee', required: true, hint: 'Full name. If first and last names are separate, pick the first name here.' },
+  { key: 'last_name', label: 'Last name', hint: 'Only when the last name has its own column.' },
+  { key: 'employee_code', label: 'Employee code', hint: 'Optional. Tells apart people with the same name.' },
+  { key: 'project', label: 'Project', required: true },
+  { key: 'project_number', label: 'Project number', hint: 'Optional.' },
+  { key: 'date', label: 'Date', required: true },
+  { key: 'hours', label: 'Hours', required: true, multi: true, hint: 'The total, or several columns to add up (for example ST, OT and DT).' },
+  { key: 'approved', label: 'Approved', hint: 'Optional. Yes/No, or a status such as Approved or Pending.' },
+];
+
+function findHeaderRow(rows) {
+  let best = -1;
+  let bestScore = 1;
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const score = rows[i].cells.filter((c) => c && KNOWN_NAMES.has(norm(cellText(c)))).length;
+    if (score > bestScore) { best = i; bestScore = score; }
+  }
+  if (best >= 0) return best;
+  const firstFull = rows.findIndex((r) => r.cells.filter((c) => c && c.t === 's').length >= 3);
+  return firstFull >= 0 ? firstFull : 0;
+}
+
+function columnLetter(index) {
+  let s = '';
+  for (let c = index + 1; c > 0; c = Math.floor((c - 1) / 26)) s = String.fromCharCode(65 + ((c - 1) % 26)) + s;
+  return s;
+}
+
+function headerNames(row, width) {
+  const seen = new Map();
+  return Array.from({ length: width }, (_, c) => {
+    const name = cellText(row.cells[c]) || `Column ${columnLetter(c)}`;
+    const count = (seen.get(name) || 0) + 1;
+    seen.set(name, count);
+    return count > 1 ? `${name} (${count})` : name;
+  });
+}
+
+function autoMap(headers) {
+  const names = headers.map(norm);
+  const used = new Set();
+  const find = (list) => {
+    for (const name of list) {
+      const i = names.indexOf(name);
+      if (i >= 0 && !used.has(i)) return i;
+    }
+    return null;
+  };
+  const map = { employee: null, last_name: null, employee_code: null, project: null, project_number: null, date: null, hours: [], approved: null };
+  const take = (key, list) => {
+    const i = find(list);
+    if (i !== null) { map[key] = i; used.add(i); }
+  };
+  take('employee_code', SYNONYMS.employee_code);
+  take('project_number', SYNONYMS.project_number);
+  take('employee', SYNONYMS.employee);
+  if (map.employee !== null && FIRST_NAMES.includes(names[map.employee])) take('last_name', SYNONYMS.last_name);
+  take('project', SYNONYMS.project);
+  take('date', SYNONYMS.date);
+  const total = find(SYNONYMS.hours_total);
+  if (total !== null) {
+    map.hours = [total];
+    used.add(total);
+  } else {
+    map.hours = names.map((name, i) => (SYNONYMS.hours_parts.includes(name) && !used.has(i) ? i : null)).filter((i) => i !== null);
+    map.hours.forEach((i) => used.add(i));
+  }
+  take('approved', SYNONYMS.approved);
+  return map;
+}
+
+// ---------------------------------------------------------------------------
+// Turning rows into time cards (what public.import_time_cards expects)
+// ---------------------------------------------------------------------------
+
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+
+function isoFromParts(y, m, d) {
+  if (y < 100) y += 2000;
+  const t = new Date(Date.UTC(y, m - 1, d));
+  if (t.getUTCFullYear() !== y || t.getUTCMonth() !== m - 1 || t.getUTCDate() !== d) return null;
+  return `${y}-${pad(m)}-${pad(d)}`;
+}
+
+function serialToIso(serial, date1904) {
+  const days = Math.floor(serial) + (date1904 ? 1462 : 0);
+  const d = new Date(Date.UTC(1899, 11, 30) + days * 86400000);
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+}
+
+function parseDateText(text) {
+  const s = text.trim().replace(/^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+/i, '');
+  let m;
+  if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[T\s].*)?$/))) return isoFromParts(+m[1], +m[2], +m[3]) || text;
+  if ((m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})(?:\s.*)?$/))) {
+    const a = +m[1];
+    const b = +m[2];
+    // Month first (US), unless the first number can't be a month.
+    return (a > 12 ? isoFromParts(+m[3], b, a) : isoFromParts(+m[3], a, b)) || text;
+  }
+  if ((m = s.match(/^(\d{1,2})[\s-]([A-Za-z]{3,9})\.?[\s,-]+(\d{2}|\d{4})$/))) {
+    const month = MONTHS[m[2].slice(0, 3).toLowerCase()];
+    return (month && isoFromParts(+m[3], month, +m[1])) || text;
+  }
+  if ((m = s.match(/^([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})(?:\s.*)?$/))) {
+    const month = MONTHS[m[1].slice(0, 3).toLowerCase()];
+    return (month && isoFromParts(+m[3], month, +m[2])) || text;
+  }
+  return text;
+}
+
+// A yyyy-mm-dd date, or the text as it was (the database then reports it).
+function toDate(cell, date1904) {
+  if (!cell) return null;
+  if (cell.t === 'n') {
+    const v = Number(cell.v);
+    if (Number.isInteger(v) && /^\d{8}$/.test(String(v))) {
+      const s = String(v);
+      return isoFromParts(+s.slice(0, 4), +s.slice(4, 6), +s.slice(6, 8)) || s;
+    }
+    return v > 0 && v < 2958466 ? serialToIso(v, date1904) : String(v);
+  }
+  if (cell.t === 'd' && cell.v instanceof Date) return isoFromParts(cell.v.getFullYear(), cell.v.getMonth() + 1, cell.v.getDate());
+  return parseDateText(cellText(cell));
+}
+
+// Hours as a number (the columns added up), or the text as it was.
+function toHours(cells) {
+  let sum = 0;
+  let found = false;
+  for (const cell of cells) {
+    if (!cell) continue;
+    let value;
+    if (cell.t === 'n') {
+      // A time-of-day format such as [h]:mm stores hours as a fraction of a day.
+      value = cell.z && /h/i.test(cell.z) && /:/.test(cell.z) ? Number(cell.v) * 24 : Number(cell.v);
+    } else {
+      const s = cellText(cell).toLowerCase();
+      if (s === '' || s === '-' || s === '—') continue;
+      let m;
+      if ((m = s.match(/^(\d+):([0-5]?\d)(?::[0-5]?\d)?$/))) value = +m[1] + +m[2] / 60;
+      else if ((m = s.match(/^(\d+(?:\.\d+)?)\s*h(?:rs?|ours?)?\.?(?:\s*(\d+)\s*m(?:in(?:ute)?s?)?\.?)?$/))) value = +m[1] + (m[2] ? +m[2] / 60 : 0);
+      else if (/^-?\d+(?:\.\d+)?$/.test(s)) value = parseFloat(s);
+      else if (/^\d+,\d{1,2}$/.test(s)) value = parseFloat(s.replace(',', '.'));
+      else return cellText(cell);
+    }
+    sum += value;
+    found = true;
+  }
+  return found ? Math.round(sum * 100) / 100 : null;
+}
+
+const YES = ['yes', 'y', 'true', '1', 'approved', 'approve', 'signed', 'signed off', 'final', 'locked'];
+const NO = ['no', 'n', 'false', '0', 'pending', 'submitted', 'unapproved', 'not approved', 'draft', 'open', 'rejected', 'in progress'];
+function toApproved(cell) {
+  if (!cell) return undefined;
+  if (cell.t === 'b') return !!cell.v;
+  const s = norm(cellText(cell));
+  if (YES.includes(s)) return true;
+  if (NO.includes(s)) return false;
+  return undefined;
+}
+
+// Builds the rows to send, skipping blank rows, total rows and repeated headers.
+// Also notes dates that don't match a Day column, and hours per pay type.
+function buildRows(sheet, headerIndex, headers, map, date1904, extra) {
+  const out = [];
+  const ignored = { blank: 0, totals: 0, headers: 0 };
+  const dayMismatches = [];
+  const payTypes = new Map();
+  const mapped = [map.employee, map.project, map.date, ...map.hours].filter((c) => c !== null);
+  for (let i = headerIndex + 1; i < sheet.rows.length; i++) {
+    const row = sheet.rows[i];
+    const texts = row.cells.map(cellText);
+    if (texts.every((t) => t === '')) { ignored.blank++; continue; }
+    if (mapped.filter((c) => norm(texts[c]) === norm(headers[c])).length >= 2) { ignored.headers++; continue; }
+    const first = texts.find((t) => t !== '') || '';
+    if (/^(grand\s+)?(sub\s*)?totals?\b/i.test(first)) { ignored.totals++; continue; }
+    const at = (c) => (c === null || c === undefined ? null : row.cells[c] || null);
+    const text = (c) => cellText(at(c)) || null;
+    let employee = text(map.employee);
+    if (map.last_name !== null) employee = [employee, text(map.last_name)].filter(Boolean).join(' ') || null;
+    const raw = {};
+    headers.forEach((name, c) => { if (texts[c] !== '' && texts[c] !== undefined) raw[name] = texts[c]; });
+    const record = {
+      line: row.n,
+      employee,
+      employee_code: text(map.employee_code),
+      project: text(map.project),
+      project_number: text(map.project_number),
+      date: toDate(at(map.date), date1904),
+      hours: map.hours.length ? toHours(map.hours.map(at)) : null,
+      approved: toApproved(at(map.approved)),
+      raw,
+    };
+    out.push(record);
+
+    if (extra.day !== null && isIso(record.date)) {
+      const weekday = weekdayIndex(text(extra.day));
+      if (weekday >= 0 && new Date(record.date + 'T00:00:00Z').getUTCDay() !== weekday) {
+        dayMismatches.push({ line: row.n, day: text(extra.day), date: record.date });
+      }
+    }
+    if (extra.payType !== null) {
+      const key = (text(extra.payType) || 'blank').toUpperCase();
+      const entry = payTypes.get(key) || { rows: 0, hours: 0 };
+      entry.rows += 1;
+      if (typeof record.hours === 'number') entry.hours += record.hours;
+      payTypes.set(key, entry);
+    }
+  }
+  return { rows: out, ignored, dayMismatches, payTypes };
+}
+
+// ---------------------------------------------------------------------------
+// Page state and screens
+// ---------------------------------------------------------------------------
+
+const S = {
+  fileName: null,
+  book: null,
+  sheetIndex: 0,
+  headerIndex: 0,
+  headers: [],
+  map: null,
+  built: null,
+  preview: null,
+  busy: false,
+};
+
+function resetAfterFile() {
+  S.preview = null;
+  $('step-review').hidden = true;
+  $('review-body').replaceChildren();
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  resetAfterFile();
+  $('step-columns').hidden = true;
+  $('file-status').replaceChildren(h('p', { class: 'muted' }, icon('spinner', 'spin'), ` Reading ${file.name}…`));
+  try {
+    const book = await readFile(file);
+    const sheetIndex = Math.max(0, book.sheets.findIndex((s) => s.rows.length > 1));
+    S.fileName = file.name;
+    S.book = book;
+    selectSheet(sheetIndex);
+    $('file-status').replaceChildren(h('div', { class: 'file-line' }, icon('sheet'), h('strong', null, file.name),
+      h('span', { class: 'muted' }, `· ${nf0.format(Math.round(file.size / 1024) || 1)} KB`),
+      h('button', { class: 'btn-link', type: 'button', onclick: () => $('file-input').click() }, 'Choose another file')));
+  } catch (error) {
+    S.book = null;
+    $('file-status').replaceChildren(notice('crit', h('strong', null, 'Couldn’t read this file. '), error.message));
+  }
+}
+
+function selectSheet(index) {
+  const sheet = S.book.sheets[index];
+  S.sheetIndex = index;
+  S.headerIndex = findHeaderRow(sheet.rows);
+  const width = Math.max(0, ...sheet.rows.map((r) => r.cells.length));
+  S.headers = headerNames(sheet.rows[S.headerIndex] || { cells: [] }, width);
+  S.map = autoMap(S.headers);
+  rebuild();
+}
+
+function rebuild() {
+  const sheet = S.book.sheets[S.sheetIndex];
+  S.built = buildRows(sheet, S.headerIndex, S.headers, S.map, S.book.date1904, findExtraColumns(S.headers, S.map));
+  resetAfterFile();
+  renderColumns();
+}
+
+// Warnings about the file itself, shown before the check and with its result.
+function fileWarnings() {
+  const warnings = [];
+  const mismatches = S.built.dayMismatches;
+  if (mismatches.length) {
+    const first = mismatches[0];
+    warnings.push(notice('warn',
+      h('strong', null, `${plural(mismatches.length, 'row')} ${mismatches.length === 1 ? 'has a date that doesn’t' : 'have dates that don’t'} match the Day column. `),
+      `For example row ${first.line}: Day says ${first.day}, but the date reads as ${fmtDateDow(first.date)}. `,
+      'Weekend hours are all OT, so check these dates before importing.'));
+  }
+  const other = [...S.built.payTypes].filter(([key]) => !WORK_PAY_TYPES.includes(norm(key)));
+  if (other.length) {
+    warnings.push(notice('warn',
+      h('strong', null, 'Check these pay types. '),
+      `${other.map(([key, v]) => `${key} (${fh(v.hours)} h)`).join(', ')} ${other.length === 1 ? 'is' : 'are'} counted as hours worked. `,
+      'If that isn’t time on the job (for example paid time off or a holiday), take those rows out of the file before importing.'));
+  }
+  return warnings;
+}
+
+function missingFields() {
+  return FIELDS.filter((f) => f.required && (f.multi ? S.map[f.key].length === 0 : S.map[f.key] === null)).map((f) => f.label);
+}
+
+function examplesFor(columns) {
+  const sheet = S.book.sheets[S.sheetIndex];
+  const found = [];
+  for (let i = S.headerIndex + 1; i < sheet.rows.length && found.length < 3; i++) {
+    const values = columns.map((c) => cellText(sheet.rows[i].cells[c])).filter((t) => t !== '');
+    if (values.length) found.push(values.join(' + '));
+  }
+  return found.join(' · ');
+}
+
+function columnSelect(field) {
+  const options = [h('option', { value: '' }, field.required ? '— Pick a column —' : '— Not in the file —'),
+    ...S.headers.map((name, i) => h('option', { value: String(i) }, name))];
+  return h('select', {
+    'aria-label': `Column for ${field.label}`,
+    value: S.map[field.key] === null ? '' : String(S.map[field.key]),
+    onchange: (e) => { S.map[field.key] = e.target.value === '' ? null : Number(e.target.value); rebuild(); },
+  }, options);
+}
+
+function hoursPicker(field) {
+  const chosen = S.map.hours;
+  const add = h('select', {
+    'aria-label': chosen.length ? 'Add another hours column' : 'Column for Hours',
+    value: '',
+    onchange: (e) => { if (e.target.value !== '') { S.map.hours = [...chosen, Number(e.target.value)]; rebuild(); } },
+  }, h('option', { value: '' }, chosen.length ? '+ Add a column to add up' : '— Pick a column —'),
+  S.headers.map((name, i) => (chosen.includes(i) ? null : h('option', { value: String(i) }, name))));
+  return h('div', { class: 'chips' },
+    chosen.map((c) => h('span', { class: 'chip' }, S.headers[c],
+      h('button', { type: 'button', 'aria-label': `Remove ${S.headers[c]}`, onclick: () => { S.map.hours = chosen.filter((x) => x !== c); rebuild(); } }, icon('close')))),
+    add);
+}
+
+function renderColumns() {
+  const sheet = S.book.sheets[S.sheetIndex];
+  const { rows, ignored } = S.built;
+  const body = $('columns-body');
+  $('step-columns').hidden = false;
+  $('file-info').textContent = `${plural(rows.length, 'data row')} · headings on row ${sheet.rows[S.headerIndex] ? sheet.rows[S.headerIndex].n : 1}`;
+
+  const sheetPicker = S.book.sheets.length > 1
+    ? h('div', { class: 'actions' }, h('label', { for: 'sheet-select' }, 'Sheet'),
+      h('select', { id: 'sheet-select', value: String(S.sheetIndex), onchange: (e) => selectSheet(Number(e.target.value)) },
+        S.book.sheets.map((s, i) => h('option', { value: String(i) }, s.name))))
+    : null;
+
+  const mappingRows = FIELDS.map((field) => h('tr', null,
+    h('th', { scope: 'row' }, field.label, field.required ? h('span', { class: 'req' }, ' (required)') : null, field.hint ? h('span', { class: 'hint' }, field.hint) : null),
+    h('td', null, field.multi ? hoursPicker(field) : columnSelect(field)),
+    h('td', { class: 'examples' }, field.multi ? examplesFor(S.map.hours) : (S.map[field.key] === null ? '' : examplesFor([S.map[field.key]])))));
+
+  const sample = rows.slice(0, 8);
+  const badDate = (r) => r.date !== null && !isIso(r.date);
+  const badHours = (r) => r.hours !== null && typeof r.hours !== 'number';
+  const sampleTable = h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
+    h('thead', null, h('tr', null, ['Row', 'Employee', 'Code', 'Project', 'Date', 'Hours', 'Approved'].map((t) => h('th', { scope: 'col', class: t === 'Hours' || t === 'Row' ? 'num' : null }, t)))),
+    h('tbody', null, sample.map((r) => h('tr', null,
+      h('td', { class: 'num muted' }, String(r.line)),
+      h('td', null, r.employee || '—'),
+      h('td', null, r.employee_code || ''),
+      h('td', null, r.project || '—', r.project_number ? h('span', { class: 'muted' }, ` · ${r.project_number}`) : null),
+      h('td', { class: badDate(r) ? 'cell-bad' : null, title: badDate(r) ? 'Date not recognized' : null }, r.date === null ? '—' : (isIso(r.date) ? fmtDateDow(r.date) : r.date)),
+      h('td', { class: 'num' + (badHours(r) ? ' cell-bad' : ''), title: badHours(r) ? 'Hours not recognized' : null }, r.hours === null ? '—' : (typeof r.hours === 'number' ? fh(r.hours) : r.hours)),
+      h('td', null, r.approved === true ? 'Yes' : r.approved === false ? 'No' : ''))))));
+
+  const ignoredParts = [
+    ignored.blank ? plural(ignored.blank, 'blank row') : null,
+    ignored.totals ? plural(ignored.totals, 'total row') : null,
+    ignored.headers ? plural(ignored.headers, 'repeated heading row') : null,
+  ].filter(Boolean);
+
+  const payTypes = [...S.built.payTypes];
+  const payTypeLine = payTypes.length
+    ? h('p', { class: 'muted small' }, 'Pay types in the file: ',
+      payTypes.map(([key, v]) => `${key} ${fh(v.hours)} h (${plural(v.rows, 'row')})`).join(' · '),
+      '. All hours are added up, and OT is worked out with our rules, not Raken’s pay types.')
+    : null;
+
+  const missing = missingFields();
+  const previewButton = h('button', {
+    class: 'btn primary', type: 'button', id: 'preview-button', disabled: missing.length > 0 || rows.length === 0 || S.busy,
+    onclick: runPreview,
+  }, 'Check with the database');
+
+  // replaceChildren would show a missing part as the text "null", so leave those out.
+  body.replaceChildren(...[
+    sheetPicker,
+    h('p', { class: 'muted' }, 'These columns were matched automatically. Change any that are wrong; the examples show what’s in each column.'),
+    h('div', { class: 'table-wrap' }, h('table', { class: 'data mapping' },
+      h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'We need'), h('th', { scope: 'col' }, 'Column in your file'), h('th', { scope: 'col' }, 'Examples'))),
+      h('tbody', null, mappingRows))),
+    h('h3', null, 'First rows, as they will be read'),
+    sampleTable,
+    ignoredParts.length ? h('p', { class: 'muted small' }, `Left out: ${ignoredParts.join(', ')}.`) : null,
+    payTypeLine,
+    ...fileWarnings(),
+    missing.length ? notice('warn', `Pick a column for: ${missing.join(', ')}.`) : null,
+    rows.length === 0 ? notice('warn', 'No data rows were found under the headings.') : null,
+    h('div', { class: 'actions' }, previewButton, h('span', { class: 'muted small' }, 'Nothing is saved until you import.')),
+  ].filter(Boolean));
+}
+
+function requestBody(dryRun) {
+  return { p_file_name: S.fileName, p_rows: S.built.rows, p_dry_run: dryRun, p_uploaded_by: UPLOADED_BY || null };
+}
+
+async function runPreview() {
+  S.busy = true;
+  const button = $('preview-button');
+  button.disabled = true;
+  button.replaceChildren(icon('spinner', 'spin'), 'Checking…');
+  S.preview = null;
+  $('step-review').hidden = false;
+  $('review-body').replaceChildren(h('p', { class: 'muted' }, icon('spinner', 'spin'), ' Checking the file with the database…'));
+  try {
+    S.preview = await api('POST', '/api/import', requestBody(true));
+    renderReview();
+  } catch (error) {
+    S.preview = null;
+    $('step-review').hidden = false;
+    $('review-body').replaceChildren(notice('crit', h('strong', null, 'The check didn’t work. '), error.message));
+  } finally {
+    S.busy = false;
+    button.disabled = missingFields().length > 0;
+    button.replaceChildren('Check with the database');
+  }
+  $('step-review').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function tile(label, value, line, swatch) {
+  return h('div', { class: 'tile' }, h('div', { class: 'tile-label' }, swatch ? h('span', { class: 'sw ' + swatch }) : null, label), h('div', { class: 'tile-value' }, value), line ? h('div', { class: 'tile-line' }, line) : null);
+}
+
+function summaryTiles(p) {
+  return h('div', { class: 'tiles' },
+    tile('Dates', p.date_from ? fmtRange(p.date_from, p.date_to) : '—'),
+    tile('Time cards', nf0.format(p.rows_imported), p.rows_skipped ? `${plural(p.rows_skipped, 'row')} skipped` : 'none skipped'),
+    tile('Employees', nf0.format(p.employees), p.new_employees.length ? `${p.new_employees.length} new` : 'all known'),
+    tile('Projects', nf0.format(p.projects), p.new_projects.length ? `${p.new_projects.length} new` : 'all known'),
+    tile('Regular', fh(p.hours.regular), null, 'reg'),
+    tile('OT', fh(p.hours.ot), null, 'ot'),
+    tile('Total hours', fh(p.hours.total)));
+}
+
+function renderReview() {
+  const p = S.preview;
+  const body = $('review-body');
+  $('step-review').hidden = false;
+  const blocked = !!p.problem || p.rows_imported === 0;
+  const parts = [];
+
+  if (p.problem) parts.push(notice('crit', h('strong', null, 'This file can’t be imported. '), p.problem));
+  parts.push(...fileWarnings());
+  parts.push(summaryTiles(p));
+
+  if (p.cards_replaced > 0) {
+    parts.push(notice('warn', h('strong', null, `Replaces ${plural(p.cards_replaced, 'time card')} from earlier uploads `),
+      `for ${fmtRange(p.date_from, p.date_to)}: `,
+      p.replaced_uploads.map((u, i) => [i ? ', ' : '', u.file_name, ` (uploaded ${fmtWhen(u.uploaded_at)})`]),
+      '. The earlier upload can be brought back with Undo.'));
+  }
+  for (const warning of p.warnings) parts.push(notice('warn', warning));
+  if (p.new_employees.length || p.new_projects.length) {
+    parts.push(h('div', { class: 'notice' }, statusIcon('off'), h('div', null,
+      h('strong', null, 'New names. '), 'Check for typos: a misspelled name becomes a new employee or project.',
+      p.new_employees.length ? h('p', { class: 'list-inline' }, `Employees: ${p.new_employees.join(', ')}`) : null,
+      p.new_projects.length ? h('p', { class: 'list-inline' }, `Projects: ${p.new_projects.join(', ')}`) : null)));
+  }
+  if (p.rows_skipped > 0) {
+    const reasons = Object.entries(p.skipped_reasons).map(([reason, n]) => `${reason}: ${n}`).join(' · ');
+    parts.push(h('details', null,
+      h('summary', null, `${plural(p.rows_skipped, 'row')} will be skipped (${reasons})`),
+      h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
+        h('thead', null, h('tr', null, h('th', { scope: 'col', class: 'num' }, 'Row'), h('th', { scope: 'col' }, 'Why'))),
+        h('tbody', null, p.skipped.map((s) => h('tr', null, h('td', { class: 'num' }, String(s.line)), h('td', null, s.reason)))))),
+      p.rows_skipped > p.skipped.length ? h('p', { class: 'muted small' }, `Showing the first ${p.skipped.length}.`) : null));
+  }
+
+  const importButton = h('button', { class: 'btn primary', type: 'button', id: 'import-button', disabled: blocked, onclick: runImport },
+    blocked ? 'Nothing to import' : `Import ${plural(p.rows_imported, 'time card')}`);
+  parts.push(h('div', { class: 'actions' }, importButton,
+    h('button', { class: 'btn', type: 'button', onclick: () => $('file-input').click() }, 'Choose another file'),
+    h('span', { class: 'muted small' }, 'Raken isn’t changed. You can undo an upload afterwards.')));
+  body.replaceChildren(...parts);
+}
+
+async function runImport() {
+  const button = $('import-button');
+  button.disabled = true;
+  button.replaceChildren(icon('spinner', 'spin'), 'Importing…');
+  try {
+    const result = await api('POST', '/api/import', requestBody(false));
+    if (result.problem) {
+      S.preview = result;
+      renderReview();
+      return;
+    }
+    $('review-body').replaceChildren(
+      notice('good', h('strong', null, `Imported ${plural(result.rows_imported, 'time card')} for ${fmtRange(result.date_from, result.date_to)}. `),
+        `Regular ${fh(result.hours.regular)} · OT ${fh(result.hours.ot)} · Total ${fh(result.hours.total)} hours.`,
+        result.cards_replaced ? ` Replaced ${plural(result.cards_replaced, 'time card')} from earlier uploads.` : ''),
+      h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: () => $('file-input').click() }, 'Upload another file')));
+    $('step-columns').hidden = true;
+    toast(`Imported ${plural(result.rows_imported, 'time card')}.`);
+    loadHistory();
+  } catch (error) {
+    button.disabled = false;
+    button.replaceChildren(`Import ${plural(S.preview.rows_imported, 'time card')}`);
+    $('review-body').prepend(notice('crit', h('strong', null, 'The import didn’t work. '), error.message, ' Nothing was saved.'));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Upload history
+// ---------------------------------------------------------------------------
+
+const STATUS = {
+  active: ['good', 'In use'],
+  'partly replaced': ['warn', 'Partly replaced'],
+  replaced: ['off', 'Replaced by a later upload'],
+  undone: ['off', 'Undone'],
+};
+
+async function loadHistory() {
+  const host = $('history');
+  try {
+    const rows = await api('GET', '/api/history');
+    if (!rows.length) {
+      host.replaceChildren(h('p', { class: 'muted', style: { padding: '16px' } }, 'No uploads yet.'));
+      return;
+    }
+    host.replaceChildren(h('table', { class: 'data' },
+      h('thead', null, h('tr', null, ['File', 'Uploaded', 'Dates', 'Time cards', 'Status', ''].map((t, i) => h('th', { scope: 'col', class: i === 3 ? 'num' : null }, t || h('span', { class: 'sr-only' }, 'Actions'))))),
+      h('tbody', null, rows.map(historyRow))));
+  } catch (error) {
+    host.replaceChildren(h('div', { style: { padding: '16px' } }, notice('crit', h('strong', null, 'Couldn’t load the upload history. '), error.message)));
+  }
+}
+
+function historyRow(u) {
+  const [kind, label] = STATUS[u.status] || ['off', u.status];
+  const cell = h('td', { class: 'num' });
+  if (u.status === 'active' || u.status === 'partly replaced') {
+    const undo = h('button', { class: 'btn sm ghost', type: 'button' }, 'Undo');
+    undo.addEventListener('click', () => {
+      cell.replaceChildren(h('span', { class: 'muted small' }, 'Undo this upload? '),
+        h('button', { class: 'btn sm danger', type: 'button', onclick: () => runUndo(u, cell) }, 'Yes, undo'),
+        h('button', { class: 'btn sm ghost', type: 'button', onclick: () => cell.replaceChildren(undo) }, 'Keep'));
+    });
+    cell.append(undo);
+  }
+  return h('tr', null,
+    h('th', { scope: 'row' }, u.file_name),
+    h('td', null, fmtWhen(u.uploaded_at), u.uploaded_by ? h('span', { class: 'muted' }, ` · ${u.uploaded_by}`) : null),
+    h('td', null, fmtRange(u.date_from, u.date_to)),
+    h('td', { class: 'num' }, nf0.format(u.status === 'undone' ? u.rows_imported : u.cards_active)),
+    h('td', null, h('span', { class: 'badge' }, statusIcon(kind), label)),
+    cell);
+}
+
+async function runUndo(u, cell) {
+  cell.replaceChildren(h('span', { class: 'muted small' }, icon('spinner', 'spin'), ' Undoing…'));
+  try {
+    const result = await api('POST', '/api/undo', { p_import_id: u.id });
+    toast(`Undone: ${u.file_name}. ${plural(result.cards_removed, 'time card')} removed${result.cards_restored ? `, ${plural(result.cards_restored, 'earlier time card')} back in use` : ''}.`);
+  } catch (error) {
+    toast(`Undo didn’t work: ${error.message}`);
+  }
+  loadHistory();
+}
+
+// ---------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------
+
+$('drop-icon').replaceWith(icon('upload'));
+$('local-pill').append(icon('laptop'), h('span', null, 'Runs on this computer'));
+$('readonly-banner').append(icon('shield'), h('p', null, h('strong', null, 'Raken is not changed. '),
+  'This page only saves to your Supabase database. When the Raken sync works again, it takes over.'));
+
+const input = $('file-input');
+input.addEventListener('change', () => { handleFile(input.files[0]); input.value = ''; });
+const drop = $('drop');
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+$('history-refresh').addEventListener('click', loadHistory);
+loadHistory();
+</script>
+</body>
+</html>

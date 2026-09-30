@@ -62,12 +62,39 @@ projects are never added together to decide OT.
 - Raken's permission has no read-only option, so read-only is enforced in our
   code: the Raken client can only send GET requests (plus the sign-in).
 - Edge Function `raken-auth` creates the approval link and receives Raken's reply.
+  Raken supports only this sign-in (approval code, then renewals). It doesn't
+  check the reply address yet; if it starts to, the callback needs one fixed address.
 - Edge Function `raken-sync` copies employees (Raken "members"), projects and
   time cards (one worker, one project, one day each) into Supabase:
   - Normal run: time cards changed since the last run, plus deletions.
   - Range run: re-reads all time cards dated in a range (used for the first import).
   - Time cards deleted in Raken are marked `deleted_at` and left out of all calculations.
   - Each run is logged in `sync_runs`.
+- **Status (Sep 30, 2026):** connected with an Account Administrator and the
+  renewal works, but Raken refuses every data request (403 on members,
+  projects and time cards). Waiting on Raken to enable data access for our app.
+
+### File upload (stand-in while the Raken API can't read data)
+
+- An admin exports time cards from Raken's website (Excel or CSV) and uploads
+  the file with the upload page in `upload/` (runs on this computer; see
+  `upload/README.md`). Raken is not involved.
+- Uploaded time cards go into the same tables as synced ones (`source = 'upload'`),
+  so the OT calculation is the same. Each upload is logged in `imports`.
+- A file replaces earlier uploads for its dates, so a corrected file never
+  counts hours twice. An upload can be undone; what it replaced counts again.
+- Refused: dates the Raken sync already covers, and files whose dates are more
+  than a year apart. Rows with problems are skipped and listed.
+- Employees and projects are matched by employee code / project number when
+  the file has them, otherwise by name; new names are created.
+- `supabase/checks/upload_check.sql` checks the upload logic.
+- Raken's time card export (one row per time entry) has these columns: Last
+  Name, First Name, EID, Day, Date, Project Name, Job #, Cost Code #, Cost Code
+  Description, Classification, Shift, Pay Type, Hours, Start Time, End Time,
+  Breaks, Meal Breaks, Total Break Time, WorkLog Name. The upload page uses
+  First + Last Name (employee), EID (employee code), Project Name (project),
+  Job # (project number), Date and Hours; Day is used to check the dates. All
+  pay types (RT/OT/DT) are added up and OT is recalculated with our rules.
 
 ### Output
 
@@ -82,17 +109,26 @@ projects are never added together to decide OT.
   Keep the rules configurable.
 - **Company holidays:** to be discussed. Probably OT like weekends; needs a
   holiday list.
-- **Raken auth type:** Client ID + secret suggests OAuth client credentials;
-  confirm against the Raken API docs.
 - **Raken data format:** confirm the fields (employee, project, date, hours,
-  cost codes?) once the API is connected.
+  cost codes?) once the API is connected. Also check Raken's export format
+  against the upload page with a real file.
+- **Work logs:** OT is per project, so hours on two work logs of the same
+  project on the same day are added together. Confirm this is right.
+- **Pay types other than RT/OT/DT:** if Raken exports PTO or holiday hours, they
+  would count as hours worked (the upload page warns). Decide how to treat them.
+- **Uploads, then the sync:** when the Raken sync starts working, decide what
+  happens to uploaded time cards for the same dates (replace them with synced
+  ones), and match employees and projects created by uploads to Raken's records.
 - **Timezone / overnight shifts:** which day an overnight shift counts toward.
 - **Daily OT threshold:** 8 hours for now; configurable in `ot_rules`.
-- **Raken's own pay types:** Raken may already mark hours as ST/OT/DT. We
-  recalculate Regular/OT from total hours using our rules. Confirm this is wanted.
+- **Raken's own pay types:** Raken marks hours as RT/OT/DT (the export's Pay
+  Type). We recalculate Regular/OT from total hours using our rules, so the
+  results can differ: a 10-hour weekday entered as RT 7 + OT 3 becomes 8
+  Regular + 2 OT. Confirm this is wanted.
 - **Approved time cards only?** Raken marks time cards as approved or not. For
   now all non-deleted time cards count; `all_approved` in the daily results
-  shows whether each day is fully approved.
+  shows whether each day is fully approved. Raken's time card export has no
+  approval column, so uploaded time cards count as not approved.
 - **First import start date:** how far back to copy time cards from Raken.
 - **Sync schedule:** e.g. hourly; to be set up after the first import works.
 - **Web page login:** decide who can sign in (invite-only is recommended)
